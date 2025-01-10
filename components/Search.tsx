@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useState } from "react";
-import { request, gql } from "graphql-request";
-import { Input } from "@/components/ui/input";
+import { useCallback, useState } from 'react';
+import { request, gql } from 'graphql-request';
+import { Input } from '@/components/ui/input';
 import makeBlockie from 'ethereum-blockies-base64';
-import { useGrid } from "./GridProvider";
+import { useGrid } from './GridProvider';
 
 const gqlQuery = gql`
   query MyQuery($id: String!) {
@@ -18,6 +18,7 @@ const gqlQuery = gql`
       ) {
         width
         src
+        url
         verified
       }
     }
@@ -31,6 +32,7 @@ type Profile = {
   profileImages?: {
     width: number;
     src: string;
+    url: string;
     verified: boolean;
   }[];
 };
@@ -41,43 +43,45 @@ type SearchProps = {
 
 export function Search({ onSelectAddress }: SearchProps) {
   const { setIsSearching } = useGrid();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const handleSearch = useCallback(async (searchQuery: string, forceSearch: boolean = false) => {
-    setQuery(searchQuery);
-    
-    if (searchQuery.length < 3) {
-      setResults([]);
-      setShowDropdown(false);
-      return;
-    }
+  const handleSearch = useCallback(
+    async (searchQuery: string, forceSearch: boolean = false) => {
+      setQuery(searchQuery);
 
-    // Only search automatically for exactly 3 chars, or when forced (Enter pressed)
-    if (searchQuery.length > 3 && !forceSearch) {
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const { search_profiles: data } = await request(
-        "https://envio.lukso-testnet.universal.tech/v1/graphql",
-        gqlQuery,
-        { id: searchQuery }
-      ) as { search_profiles: Profile[] };
+      if (searchQuery.length < 3) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
 
-      setResults(data);
-      setShowDropdown(true);
-      
-    } catch (error) {
-      console.error('Search error:', error);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      // Only search automatically for exactly 3 chars, or when forced (Enter pressed)
+      if (searchQuery.length > 3 && !forceSearch) {
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { search_profiles: data } = (await request(
+          'https://envio.lukso-testnet.universal.tech/v1/graphql',
+          gqlQuery,
+          { id: searchQuery }
+        )) as { search_profiles: Profile[] };
+
+        setResults(data);
+        setShowDropdown(true);
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -101,7 +105,7 @@ export function Search({ onSelectAddress }: SearchProps) {
   const getProfileImage = (profile: Profile) => {
     if (profile.profileImages && profile.profileImages.length > 0) {
       return (
-        <img 
+        <img
           src={profile.profileImages[0].src}
           alt={`${profile.name || profile.id} avatar`}
           className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
@@ -112,9 +116,9 @@ export function Search({ onSelectAddress }: SearchProps) {
         />
       );
     }
-    
+
     return (
-      <img 
+      <img
         src={makeBlockie(profile.id)}
         alt={`${profile.name || profile.id} avatar`}
         className="w-10 h-10 rounded-full flex-shrink-0"
@@ -131,7 +135,9 @@ export function Search({ onSelectAddress }: SearchProps) {
         >
           Back
         </button>
-        <h2 className="text-lg font-semibold text-gray-200">Select New Address</h2>
+        <h2 className="text-lg font-semibold text-gray-200">
+          Select New Address
+        </h2>
       </div>
 
       <div className="w-full max-w-sm mb-4">
@@ -176,4 +182,4 @@ export function Search({ onSelectAddress }: SearchProps) {
       </div>
     </>
   );
-} 
+}
