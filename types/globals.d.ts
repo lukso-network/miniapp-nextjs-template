@@ -24,7 +24,7 @@ type WebComponent<T> =
       Partial<T>)
   | { children?: React.ReactNode; class?: string };
 
-declare namespace React {
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'lukso-navbar': WebComponent<LuksoNavbar>;

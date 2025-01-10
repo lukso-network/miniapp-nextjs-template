@@ -6,9 +6,6 @@ import { Input } from '@/components/ui/input';
 import { useGrid } from './GridProvider';
 
 // TODO: we need to find a way to import this globally instead
-if (typeof window !== 'undefined') {
-  import('@lukso/web-components');
-}
 
 const minAmount = 0.25;
 const maxAmount = 1000;
@@ -72,7 +69,6 @@ export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
             <div className="text-sm text-gray-500 mb-2">Recipient Address</div>
             <code className="block text-sm font-mono text-gray-700 break-all">
               {recipientAddress}
-              {/* TODO: need to find a way to import/merge types of lukso on globals.d.ts with JSX.IntrinsicElements */}
               <lukso-profile
                 profile-address={recipientAddress}
                 profile-url={profileImgUrl}

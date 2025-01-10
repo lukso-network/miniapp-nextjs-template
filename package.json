@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node ./pre-build.mjs",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
@@ -31,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "postcss": "^8",
+    "sass": "^1.83.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

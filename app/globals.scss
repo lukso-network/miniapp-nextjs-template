@@ -1,10 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+$font-file-path: '/assets/fonts';
+
+@import '@lukso/web-components/tools/sass/main.scss';
 
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
+
 
 @layer base {
   :root {
