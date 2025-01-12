@@ -10,9 +10,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@lukso/up-provider": "^0.2.1",
+    "@erc725/erc725.js": "^0.27.2",
+    "@lukso/up-provider": "^0.3.1",
     "@lukso/web-components": "^1.104.0",
-    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.1",
     "ethereum-blockies-base64": "^1.0.2",
@@ -21,7 +21,6 @@
     "next": "15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss-animate": "^1.0.7",
     "viem": "^2.21.54"
   },
   "devDependencies": {

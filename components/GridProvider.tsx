@@ -106,17 +106,6 @@ export function GridProvider({ children }: GridProviderProps) {
     }
   }, [client, provider, accounts.length, contextAccounts.length]);
 
-  const content = !walletConnected ? (
-    <div className="text-center p-8 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 shadow-2xl animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-3 text-white">Welcome to Grid App</h2>
-      <p className="text-gray-400">Please connect your Universal Profile to continue.</p>
-    </div>
-  ) : (
-    <div className="relative w-full max-w-sm animate-slide-up">
-      {children}
-    </div>
-  );
-
   return (
     <GridContext.Provider
       value={{
@@ -133,16 +122,9 @@ export function GridProvider({ children }: GridProviderProps) {
       }}
     >
       <div className="min-h-screen w-full bg-gradient-to-b from-black to-gray-900">
-        <div className="relative min-h-screen w-full max-w-screen-xl mx-auto p-6 flex flex-col items-center justify-center overflow-hidden">
-          {/* Background Animation */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-          </div>
-          
-          {/* Content */}
-          <div className="relative z-10">
-            {content}
+        <div className="relative min-h-screen w-full max-w-screen-xl mx-auto p-6 flex flex-col items-center justify-center">
+          <div className="relative z-10 w-full max-w-sm">
+            {children}
           </div>
         </div>
       </div>

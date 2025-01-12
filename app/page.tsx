@@ -4,37 +4,26 @@ import { GridProvider } from '@/components/GridProvider';
 import { Search } from '@/components/Search';
 import { Donate } from '@/components/Donate';
 import { useGrid } from '@/components/GridProvider';
-
+import { useState } from 'react';
 function MainContent() {
   const { selectedAddress, setSelectedAddress, isSearching } = useGrid();
-
-  // TODO: fetch profile image from the blockchain ERC-725 or envio
-  const profileImgUrl =
-    'https://tools-web-components.pages.dev/images/sample-avatar.jpg';
-
+  const [selectedUsername, setSelectedUsername] = useState<string>('');
   return (
     <>
       <div
-        className={`transition-all duration-500 ${
-          isSearching
-            ? 'opacity-0 translate-y-10 pointer-events-none'
-            : 'opacity-100 translate-y-0'
+        className={`${
+          isSearching ? 'hidden' : 'block'
         }`}
       >
-        <Donate
-          selectedAddress={selectedAddress}
-          profileImgUrl={profileImgUrl}
-        />
+        <Donate selectedAddress={selectedAddress} selectedUsername={selectedUsername} />
       </div>
 
       <div
-        className={`absolute top-0 left-0 w-full transition-all duration-500 ${
-          !isSearching
-            ? 'opacity-0 -translate-y-10 pointer-events-none'
-            : 'opacity-100 translate-y-0'
+        className={`${
+          !isSearching ? 'hidden' : 'block'
         }`}
       >
-        <Search onSelectAddress={setSelectedAddress} />
+        <Search onSelectAddress={setSelectedAddress} onSelectUsername={setSelectedUsername} />
       </div>
     </>
   );

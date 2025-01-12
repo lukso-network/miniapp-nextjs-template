@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { request, gql } from 'graphql-request';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import makeBlockie from 'ethereum-blockies-base64';
 import { useGrid } from './GridProvider';
 
@@ -39,9 +40,10 @@ type Profile = {
 
 type SearchProps = {
   onSelectAddress: (address: `0x${string}`) => void;
+  onSelectUsername: (username: string) => void;
 };
 
-export function Search({ onSelectAddress }: SearchProps) {
+export function Search({ onSelectAddress, onSelectUsername }: SearchProps) {
   const { setIsSearching } = useGrid();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
@@ -94,6 +96,7 @@ export function Search({ onSelectAddress }: SearchProps) {
       // The profile.id should be an Ethereum address
       const address = profile.id as `0x${string}`;
       onSelectAddress(address);
+      onSelectUsername(profile.fullName || '');
       setShowDropdown(false);
       setQuery('');
       setIsSearching(false);
@@ -127,50 +130,57 @@ export function Search({ onSelectAddress }: SearchProps) {
   };
 
   return (
-    <>
-      <div className="flex items-center gap-4 mb-4">
-        <button
-          onClick={() => setIsSearching(false)}
-          className="px-4 py-2 bg-gray-800 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          Back
-        </button>
-        <h2 className="text-lg font-semibold text-gray-200">
-          Select New Address
-        </h2>
-      </div>
+    <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg">
+      {/* Header Section */}
+      <div className="flex flex-col space-y-4 mb-8">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Search Profile
+          </h2>
+          <Button
+            onClick={() => setIsSearching(false)}
+            variant="default"
+            size="lg"
+            className="font-medium"
+          >
+            Back
+          </Button>
+        </div>
 
-      <div className="w-full max-w-sm mb-4">
-        <div className="relative">
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Enter at least 3 characters to search..."
-            className="w-full bg-gray-800 text-gray-200 placeholder:text-gray-400"
-            disabled={loading}
-          />
+        {/* Search Input Section */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Input
+              id="search"
+              type="text"
+              value={query}
+              onChange={(e) => handleSearch(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Enter at least 3 characters to search..."
+              className="block w-full px-4 py-3 text-lg rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              disabled={loading}
+            />
+          </div>
 
           {showDropdown && results.length > 0 && (
-            <div className="absolute mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+            <div className="mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-[200px] overflow-y-auto">
               {results.map((result) => (
                 <button
                   key={result.id}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-700 flex items-start gap-3"
+                  className="w-full px-6 py-4 text-left hover:bg-gray-50 flex items-start gap-4 border-b border-gray-100 last:border-0 transition-colors"
                   onClick={() => handleSelectProfile(result)}
                 >
                   {getProfileImage(result)}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate text-gray-200">
+                    <div className="font-medium text-base text-gray-900 truncate">
                       {result.name || result.id}
                     </div>
                     {result.fullName && (
-                      <div className="text-sm text-gray-400 truncate">
+                      <div className="text-sm text-gray-600 truncate mt-0.5">
                         {result.fullName}
                       </div>
                     )}
-                    <div className="text-sm text-gray-500 font-mono truncate">
+                    <div className="text-sm text-gray-500 font-mono truncate mt-1">
                       {result.id}
                     </div>
                   </div>
@@ -180,6 +190,6 @@ export function Search({ onSelectAddress }: SearchProps) {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

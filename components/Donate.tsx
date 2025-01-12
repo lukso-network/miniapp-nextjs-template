@@ -4,22 +4,24 @@ import { parseUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useGrid } from './GridProvider';
+import { LuksoProfile } from './LuksoProfile';
+import { LuksoUsername } from './LuksoUsername';
 
-// TODO: we need to find a way to import this globally instead
-
-const minAmount = 0.25;
+const minAmount = 1.00;
 const maxAmount = 1000;
 
 interface DonateProps {
   selectedAddress?: `0x${string}` | null;
-  profileImgUrl?: string;
+  selectedUsername?: string | '';
 }
 
-export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
+export function Donate({ selectedAddress, selectedUsername }: DonateProps) {
   const { client, accounts, contextAccounts, walletConnected, setIsSearching } =
     useGrid();
   const [amount, setAmount] = useState<number>(minAmount);
   const [error, setError] = useState('');
+  const recipientAddress = selectedAddress || contextAccounts[0];
+  const recipientUsername = selectedUsername || '';
 
   const validateAmount = useCallback((value: number) => {
     if (value < minAmount) {
@@ -36,8 +38,6 @@ export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
     validateAmount(amount);
   }, [amount, validateAmount]);
 
-  const recipientAddress = selectedAddress || contextAccounts[0];
-
   const sendToken = async () => {
     if (!client || !walletConnected || !amount) return;
     await client.sendTransaction({
@@ -48,34 +48,35 @@ export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg">
+    <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg">
       {/* Header Section */}
       <div className="flex flex-col space-y-4 mb-8">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             Donate LYX
           </h2>
-          <button
+          <Button
             onClick={() => setIsSearching(true)}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors font-medium"
+            variant="default"
+            size="lg"
           >
             Change Address
-          </button>
+          </Button>
         </div>
 
         {/* Recipient Address Display */}
         {recipientAddress && (
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="text-sm text-gray-500 mb-2">Recipient Address</div>
-            <code className="block text-sm font-mono text-gray-700 break-all">
-              {recipientAddress}
-              <lukso-profile
-                profile-address={recipientAddress}
-                profile-url={profileImgUrl}
-                has-identicon
-                size="small"
-              ></lukso-profile>
-            </code>
+          <div className="bg-gray-20 rounded-xl p-6 space-y-4">
+            <div className="flex flex-col items-center">
+              <LuksoProfile address={recipientAddress} size="large" hasIdenticon />
+              <LuksoUsername name={recipientUsername} size="large" />
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-500">Recipient Address</div>
+              <code className="block text-sm font-mono text-gray-700 break-all bg-white p-3 rounded-lg">
+                {recipientAddress}
+              </code>
+            </div>
           </div>
         )}
       </div>
@@ -100,7 +101,7 @@ export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
               }}
               min={minAmount}
               max={maxAmount}
-              step="0.25"
+              step="1.00"
               className="block w-full px-4 py-3 text-lg rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={!walletConnected}
             />
@@ -119,7 +120,7 @@ export function Donate({ selectedAddress, profileImgUrl }: DonateProps) {
         >
           {walletConnected
             ? `Donate ${amount} LYX`
-            : 'Connect Wallet to Donate'}
+            : 'Connect UP to Donate'}
         </Button>
       </div>
     </div>

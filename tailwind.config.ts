@@ -58,6 +58,6 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [],
   presets: [require('@lukso/web-components/tailwind.config')],
 } satisfies Config;
