@@ -69,7 +69,7 @@ export function Donate({ selectedAddress }: DonateProps) {
 
         {/* Recipient Address Display */}
         {recipientAddress && (
-          <div className="bg-gray-20 rounded-xl p-6 space-y-2">
+          <div className="bg-gray-20 rounded-xl p-4">
             <div className="flex flex-col items-center">
               <LuksoProfile address={recipientAddress} />
             </div>

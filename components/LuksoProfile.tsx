@@ -59,15 +59,13 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
             className="w-full"
         >
             <div slot="content" className="p-3 flex flex-col items-center">
-                {fullName && (
-                    <lukso-username
-                        name={fullName || ''}
-                        address={address || ''}
-                        size="large"
-                        max-width="200"
-                        prefix="@"
-                    ></lukso-username>
-                )}
+                <lukso-username
+                    name={fullName || ''}
+                    address={address || ''}
+                    size="large"
+                    max-width="200"
+                    prefix="@"
+                ></lukso-username>
             </div>
         </lukso-card>
     );

@@ -121,11 +121,9 @@ export function useUpProvider() {
         setIsSearching,
       }}
     >
-      <div className="bg-gradient-to-b from-black to-gray-900">
-        <div className="relative mx-auto p-6 flex flex-col items-center justify-center">
-          <div className="relative z-10 w-full max-w-sm">
-            {children}
-          </div>
+      <div className="bg-gradient-to-b from-black to-gray-900 min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-md p-8">
+          {children}
         </div>
       </div>
     </UpContext.Provider>
