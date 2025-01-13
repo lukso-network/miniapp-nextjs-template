@@ -25,7 +25,7 @@ Shows how to:
 
 ### Web Components
 Shows how to:
-- Use the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile images
+- Use the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile card
 
 ### ERC-725.js
 Shows how to:
@@ -46,18 +46,17 @@ yarn dev
 
 ## Project Structure
 
-- `components/GridProvider.tsx`: Core UP Provider implementation and wallet connection logic
-- `components/Search.tsx`: Example of Envio integration for profile search
+- `components/upProvider.tsx`: Core UP Provider implementation and wallet connection logic
+- `components/ProfileSearch.tsx`: Example of Envio integration for profile search
 - `components/Donate.tsx`: Example use-case of this template. Uses the client from the up-provider package to interact with the blockchain
 - `components/LuksoProfile.tsx`: Example of using the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile images that is fetched using the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library
-- `components/LuksoUsername.tsx`: Example of using the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile images that is gathered from the Envio indexer
 
 ## Learn More
 
-- [LUKSO Documentation](https://docs.lukso.tech/) - Learn about LUKSO ecosystem
-- [UP Browser Extension](https://docs.lukso.tech/guides/browser-extension/install) - Install the Universal Profile Browser Extension
-- [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) - Learn about the erc725js library 
-- [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) - Learn about the @lukso/web-components library
+- [LUKSO Documentation](https://docs.lukso.tech/) - Learn more about developing on LUKSO
+- [UP Browser Extension](https://docs.lukso.tech/install-up-browser-extension) - Install the Universal Profile Browser Extension
+- [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) - Learn more about the erc725js library 
+- [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) - Learn more about the @lukso/web-components library
 
 
 ## Contributing

@@ -121,8 +121,8 @@ export function useUpProvider() {
         setIsSearching,
       }}
     >
-      <div className="min-h-screen w-full bg-gradient-to-b from-black to-gray-900">
-        <div className="relative min-h-screen w-full max-w-screen-xl mx-auto p-6 flex flex-col items-center justify-center">
+      <div className="bg-gradient-to-b from-black to-gray-900">
+        <div className="relative mx-auto p-6 flex flex-col items-center justify-center">
           <div className="relative z-10 w-full max-w-sm">
             {children}
           </div>
