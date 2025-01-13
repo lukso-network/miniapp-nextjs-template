@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import LuksoWebComponentsProvider from './LuksoWebComponentsProvider';
-import './globals.scss';
+import '@/styles/globals.scss';
 
 export const metadata: Metadata = {
   title: 'LUKSO MiniApp Nextjs Template',
@@ -14,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <LuksoWebComponentsProvider>{children}</LuksoWebComponentsProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

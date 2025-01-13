@@ -1,6 +1,6 @@
 $font-file-path: '/assets/fonts';
 
-@import '@lukso/web-components/tools/sass/main.scss';
+@use '@lukso/web-components/tools/sass/main.scss';
 
 body {
   font-family: Arial, Helvetica, sans-serif;

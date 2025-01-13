@@ -5,24 +5,18 @@ import { Donate } from '@/components/Donate';
 import { ProfileSearch } from '@/components/ProfileSearch';
 import { useUpProvider } from '@/components/upProvider';
 
+import('@lukso/web-components');
+
 function MainContent() {
   const { selectedAddress, setSelectedAddress, isSearching } = useUpProvider();
   return (
     <>
-      <div
-        className={`${
-          isSearching ? 'hidden' : 'block'
-        }`}
-      >
+      <div className={`${isSearching ? 'hidden' : 'block'}`}>
         <Donate selectedAddress={selectedAddress} />
       </div>
 
-      <div
-        className={`${
-          !isSearching ? 'hidden' : 'block'
-        }`}
-      >
-        <ProfileSearch onSelectAddress={setSelectedAddress}  />
+      <div className={`${!isSearching ? 'hidden' : 'block'}`}>
+        <ProfileSearch onSelectAddress={setSelectedAddress} />
       </div>
     </>
   );

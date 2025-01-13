@@ -4,7 +4,7 @@ import { parseUnits } from 'viem';
 import { useUpProvider } from './upProvider';
 import { LuksoProfile } from './LuksoProfile';
 
-const minAmount = 1.00;
+const minAmount = 1.0;
 const maxAmount = 1000;
 
 interface DonateProps {
@@ -42,6 +42,14 @@ export function Donate({ selectedAddress }: DonateProps) {
     });
   };
 
+  const handleOnInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = Number.parseFloat(e.target.value);
+      validateAmount(value);
+    },
+    [validateAmount]
+  );
+
   return (
     <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg">
       {/* Header Section */}
@@ -77,11 +85,8 @@ export function Donate({ selectedAddress }: DonateProps) {
         type="number"
         min={minAmount}
         max={maxAmount}
-        on-change={(e: any) => {
-          const value = Number.parseFloat(e.target.value);
-          validateAmount(value);
-        }}
-        className="w-full"
+        onInput={handleOnInput}
+        is-full-width
         is-disabled={!walletConnected}
       ></lukso-input>
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
@@ -94,9 +99,7 @@ export function Donate({ selectedAddress }: DonateProps) {
           size="medium"
           isFullWidth={true}
         >
-          {walletConnected
-            ? `Donate ${amount} LYX`
-            : 'Connect UP to Donate'}
+          {walletConnected ? `Donate ${amount} LYX` : 'Connect UP to Donate'}
         </lukso-button>
       </div>
     </div>

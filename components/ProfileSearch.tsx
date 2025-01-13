@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { request, gql } from 'graphql-request';
-import { Input } from '@/components/ui/input';
 import makeBlockie from 'ethereum-blockies-base64';
 import { useUpProvider } from './upProvider';
 
@@ -126,6 +125,13 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
     );
   };
 
+  const handleInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleSearch(e.target.value);
+    },
+    [handleSearch]
+  );
+
   return (
     <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg">
       {/* Header Section */}
@@ -147,15 +153,15 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
         {/* Search Input Section */}
         <div className="space-y-2">
           <div className="relative">
-            <Input
+            <lukso-input
               id="search"
               type="text"
               value={query}
-              onChange={(e) => handleSearch(e.target.value)}
+              onInput={handleInput}
               onKeyDown={handleKeyPress}
               placeholder="Enter 3 characters to search..."
-              className="block w-full px-4 py-3 text-l rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              disabled={loading}
+              is-full-width
+              is-disabled={loading}
             />
           </div>
 
