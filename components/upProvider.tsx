@@ -5,7 +5,7 @@ import { createWalletClient, custom } from "viem";
 import { luksoTestnet } from "viem/chains";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-interface GridProviderContext {
+interface UpProviderContext {
   provider: any;
   client: any;
   chainId: number;
@@ -18,21 +18,21 @@ interface GridProviderContext {
   setIsSearching: (isSearching: boolean) => void;
 }
 
-const GridContext = createContext<GridProviderContext | undefined>(undefined);
+const UpContext = createContext<UpProviderContext | undefined>(undefined);
 
-export function useGrid() {
-  const context = useContext(GridContext);
+export function useUpProvider() {
+  const context = useContext(UpContext);
   if (!context) {
-    throw new Error("useGrid must be used within a GridProvider");
+    throw new Error("useUpProvider must be used within a UpProvider");
   }
   return context;
 }
 
-interface GridProviderProps {
+  interface UpProviderProps {
   children: ReactNode;
 }
 
-export function GridProvider({ children }: GridProviderProps) {
+  export function UpProvider({ children }: UpProviderProps) {
   const [provider] = useState(() =>
     typeof window !== "undefined" ? createClientUPProvider() : null
   );
@@ -107,7 +107,7 @@ export function GridProvider({ children }: GridProviderProps) {
   }, [client, provider, accounts.length, contextAccounts.length]);
 
   return (
-    <GridContext.Provider
+    <UpContext.Provider
       value={{
         provider,
         client,
@@ -128,6 +128,6 @@ export function GridProvider({ children }: GridProviderProps) {
           </div>
         </div>
       </div>
-    </GridContext.Provider>
+    </UpContext.Provider>
   );
 } 

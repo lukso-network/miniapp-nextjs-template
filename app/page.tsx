@@ -1,13 +1,12 @@
 'use client';
 
-import { GridProvider } from '@/components/GridProvider';
-import { Search } from '@/components/Search';
+import { UpProvider } from '@/components/upProvider';
 import { Donate } from '@/components/Donate';
-import { useGrid } from '@/components/GridProvider';
-import { useState } from 'react';
+import { ProfileSearch } from '@/components/ProfileSearch';
+import { useUpProvider } from '@/components/upProvider';
+
 function MainContent() {
-  const { selectedAddress, setSelectedAddress, isSearching } = useGrid();
-  const [selectedUsername, setSelectedUsername] = useState<string>('');
+  const { selectedAddress, setSelectedAddress, isSearching } = useUpProvider();
   return (
     <>
       <div
@@ -15,7 +14,7 @@ function MainContent() {
           isSearching ? 'hidden' : 'block'
         }`}
       >
-        <Donate selectedAddress={selectedAddress} selectedUsername={selectedUsername} />
+        <Donate selectedAddress={selectedAddress} />
       </div>
 
       <div
@@ -23,7 +22,7 @@ function MainContent() {
           !isSearching ? 'hidden' : 'block'
         }`}
       >
-        <Search onSelectAddress={setSelectedAddress} onSelectUsername={setSelectedUsername} />
+        <ProfileSearch onSelectAddress={setSelectedAddress}  />
       </div>
     </>
   );
@@ -31,8 +30,8 @@ function MainContent() {
 
 export default function Home() {
   return (
-    <GridProvider>
+    <UpProvider>
       <MainContent />
-    </GridProvider>
+    </UpProvider>
   );
 }

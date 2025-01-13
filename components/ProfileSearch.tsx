@@ -3,9 +3,8 @@
 import { useCallback, useState } from 'react';
 import { request, gql } from 'graphql-request';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import makeBlockie from 'ethereum-blockies-base64';
-import { useGrid } from './GridProvider';
+import { useUpProvider } from './upProvider';
 
 const gqlQuery = gql`
   query MyQuery($id: String!) {
@@ -40,11 +39,10 @@ type Profile = {
 
 type SearchProps = {
   onSelectAddress: (address: `0x${string}`) => void;
-  onSelectUsername: (username: string) => void;
 };
 
-export function Search({ onSelectAddress, onSelectUsername }: SearchProps) {
-  const { setIsSearching } = useGrid();
+export function ProfileSearch({ onSelectAddress }: SearchProps) {
+  const { setIsSearching } = useUpProvider();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,7 +94,6 @@ export function Search({ onSelectAddress, onSelectUsername }: SearchProps) {
       // The profile.id should be an Ethereum address
       const address = profile.id as `0x${string}`;
       onSelectAddress(address);
-      onSelectUsername(profile.fullName || '');
       setShowDropdown(false);
       setQuery('');
       setIsSearching(false);
@@ -137,14 +134,14 @@ export function Search({ onSelectAddress, onSelectUsername }: SearchProps) {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             Search Profile
           </h2>
-          <Button
+          <lukso-button
             onClick={() => setIsSearching(false)}
-            variant="default"
-            size="lg"
-            className="font-medium"
+            variant="primary"
+            size="medium"
+            isFullWidth={true}
           >
             Back
-          </Button>
+          </lukso-button>
         </div>
 
         {/* Search Input Section */}
@@ -156,8 +153,8 @@ export function Search({ onSelectAddress, onSelectUsername }: SearchProps) {
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Enter at least 3 characters to search..."
-              className="block w-full px-4 py-3 text-lg rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              placeholder="Enter 3 characters to search..."
+              className="block w-full px-4 py-3 text-l rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               disabled={loading}
             />
           </div>

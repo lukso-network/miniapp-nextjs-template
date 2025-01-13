@@ -7,15 +7,14 @@ const RPC_ENDPOINT = 'https://4201.rpc.thirdweb.com';
 
 interface LuksoProfileProps {
     address: string;
-    size?: 'small' | 'medium' | 'large';
-    hasIdenticon?: boolean;
 }
 
-export function LuksoProfile({ address, size, hasIdenticon = true }: LuksoProfileProps) {
+export function LuksoProfile({ address }: LuksoProfileProps) {
     const [profileImgUrl, setProfileImgUrl] = useState<string>(
         'https://tools-web-components.pages.dev/images/sample-avatar.jpg'
     );
-    
+    const [fullName, setFullName] = useState<string>('');
+    const [profileBackground, setProfileBackground] = useState<string>('');
     useEffect(() => {
         async function fetchProfileImage() {
             if (!address) return;
@@ -30,9 +29,18 @@ export function LuksoProfile({ address, size, hasIdenticon = true }: LuksoProfil
                     'LSP3Profile' in fetchedData.value
                 ) {
                     const profileImagesIPFS = fetchedData.value.LSP3Profile.profileImage;
+                    const fullName = fetchedData.value.LSP3Profile.name;
+                    const profileBackground = fetchedData.value.LSP3Profile.backgroundImage;
+                    console.log("LSP3Profile", fetchedData.value.LSP3Profile);
+                    console.log("fullName", fullName);
+                    setFullName(fullName);
                     if (profileImagesIPFS?.[0]?.url) {
                         const imageUrl = profileImagesIPFS[0].url.replace('ipfs://', IPFS_GATEWAY);
                         setProfileImgUrl(imageUrl);
+                    }
+                    if (profileBackground?.[0]?.url) {
+                        const backgroundUrl = profileBackground[0].url.replace('ipfs://', IPFS_GATEWAY);
+                        setProfileBackground(backgroundUrl);
                     }
                 }
 
@@ -46,13 +54,23 @@ export function LuksoProfile({ address, size, hasIdenticon = true }: LuksoProfil
 
     return (
         <div>
-            <lukso-profile
-                profile-address={address}
+            <lukso-card
+                variant="profile"
+                background-url={profileBackground}
                 profile-url={profileImgUrl}
-                has-identicon={hasIdenticon}
-                size={size}
-                is-square={true}
-            ></lukso-profile>
+                width={320}
+                height={200}
+                shadow="large"
+            >
+                <div slot="content" className="p-6">
+                    <lukso-username
+                        name={fullName}
+                        address={address}
+                        size="large"
+                        max-width="200"
+                    ></lukso-username>
+                </div>
+            </lukso-card>
         </div>
     );
 } 
