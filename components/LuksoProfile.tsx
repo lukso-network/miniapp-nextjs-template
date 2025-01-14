@@ -10,19 +10,31 @@ interface LuksoProfileProps {
 }
 
 export function LuksoProfile({ address }: LuksoProfileProps) {
-    const [profileImgUrl, setProfileImgUrl] = useState<string>(
-        'https://tools-web-components.pages.dev/images/sample-avatar.jpg'
-    );
-    const [fullName, setFullName] = useState<string>('');
-    const [profileBackground, setProfileBackground] = useState<string>('');
+    const [profileData, setProfileData] = useState<{
+        imgUrl: string;
+        fullName: string;
+        background: string;
+        profileAddress: string;
+        isLoading: boolean;
+    }>({
+        imgUrl: 'https://tools-web-components.pages.dev/images/sample-avatar.jpg',
+        fullName: '',
+        background: '',
+        profileAddress: '',
+        isLoading: false,
+    });
+
     useEffect(() => {
         async function fetchProfileImage() {
             if (!address) return;
+
+            setProfileData(prev => ({ ...prev, isLoading: true }));
 
             try {
                 const config = { ipfsGateway: IPFS_GATEWAY };
                 const profile = new ERC725(erc725schema, address, RPC_ENDPOINT, config);
                 const fetchedData = await profile.fetchData('LSP3Profile');
+                
                 if (
                     fetchedData?.value &&
                     typeof fetchedData.value === 'object' &&
@@ -31,41 +43,49 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
                     const profileImagesIPFS = fetchedData.value.LSP3Profile.profileImage;
                     const fullName = fetchedData.value.LSP3Profile.name;
                     const profileBackground = fetchedData.value.LSP3Profile.backgroundImage;
-                    setFullName(fullName);
-                    if (profileImagesIPFS?.[0]?.url) {
-                        const imageUrl = profileImagesIPFS[0].url.replace('ipfs://', IPFS_GATEWAY);
-                        setProfileImgUrl(imageUrl);
-                    }
-                    if (profileBackground?.[0]?.url) {
-                        const backgroundUrl = profileBackground[0].url.replace('ipfs://', IPFS_GATEWAY);
-                        setProfileBackground(backgroundUrl);
-                    }
+                    
+                    setProfileData({
+                        fullName: fullName || '',
+                        imgUrl: profileImagesIPFS?.[0]?.url
+                            ? profileImagesIPFS[0].url.replace('ipfs://', IPFS_GATEWAY)
+                            : 'https://tools-web-components.pages.dev/images/sample-avatar.jpg',
+                        background: profileBackground?.[0]?.url
+                            ? profileBackground[0].url.replace('ipfs://', IPFS_GATEWAY)
+                            : '',
+                        profileAddress: address,
+                        isLoading: false,
+                    });
                 }
-
             } catch (error) {
                 console.error('Error fetching profile image:', error);
+                setProfileData(prev => ({
+                    ...prev,
+                    isLoading: false,
+                }));
             }
         }
 
         fetchProfileImage();
-    }, [address, fullName]);
+    }, [address]);
 
     return (
         <lukso-card
             variant="profile"
-            background-url={profileBackground}
-            profile-url={profileImgUrl}
+            background-url={profileData.background}
+            profile-url={profileData.imgUrl}
             shadow="medium"
             className="w-full"
         >
             <div slot="content" className="p-3 flex flex-col items-center">
-                <lukso-username
-                    name={fullName || ''}
-                    address={address || ''}
-                    size="large"
-                    max-width="200"
-                    prefix="@"
-                ></lukso-username>
+                {!profileData.isLoading && (
+                    <lukso-username
+                        name={profileData.fullName}
+                        address={profileData.profileAddress}
+                        size="large"
+                        max-width="200"
+                        prefix="@"
+                    ></lukso-username>
+                )}
             </div>
         </lukso-card>
     );
