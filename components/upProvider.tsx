@@ -1,4 +1,20 @@
-"use client";
+/**
+ * @component UpProvider
+ * @description Context provider that manages Universal Profile (UP) wallet connections and state
+ * for LUKSO blockchain interactions on Grid. It handles wallet connection status, account management, and chain
+ * information while providing real-time updates through event listeners.
+ *
+ * @provides {UpProviderContext} Context containing:
+ * - provider: UP-specific wallet provider instance
+ * - client: Viem wallet client for blockchain interactions
+ * - chainId: Current blockchain network ID
+ * - accounts: Array of connected wallet addresses
+ * - contextAccounts: Array of Universal Profile accounts
+ * - walletConnected: Boolean indicating active wallet connection
+ * - selectedAddress: Currently selected address for transactions
+ * - isSearching: Loading state indicator
+ */
+'use client';
 
 import { createClientUPProvider } from "@lukso/up-provider";
 import { createWalletClient, custom } from "viem";
@@ -32,7 +48,7 @@ export function useUpProvider() {
   children: ReactNode;
 }
 
-  export function UpProvider({ children }: UpProviderProps) {
+export function UpProvider({ children }: UpProviderProps) {
   const [provider] = useState(() =>
     typeof window !== "undefined" ? createClientUPProvider() : null
   );

@@ -1,3 +1,19 @@
+/**
+ * ProfileSearch Component
+ * 
+ * A searchable interface for LUKSO Universal Profiles that allows users to search and select
+ * blockchain addresses associated with profiles.
+ * 
+ * Features:
+ * - Auto-search triggers when exactly 3 characters are entered
+ * - Manual search available via Enter key
+ * - Displays profile images with blockies fallback
+ * - Shows profile name, full name, and address in results
+ * 
+ * @component
+ * @param {Object} props
+ * @param {(address: `0x${string}`) => void} props.onSelectAddress - Callback function triggered when a profile is selected
+ */
 'use client';
 
 import { useCallback, useState } from 'react';

@@ -1,4 +1,23 @@
+/**
+ * A component that facilitates LYX token transfers to a specified LUKSO address.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.selectedAddress] - Optional hex address of the donation recipient.
+ *                                          If not provided, uses the first address from context.
+ * 
+ * Features:
+ * - Amount validation (${minAmount}-${maxAmount} LYX)
+ * - Integration with UP Browser wallet
+ * - Recipient profile display using LuksoProfile
+ * - Real-time amount validation
+ * 
+ * @requires useUpProvider - Hook for UP Browser wallet integration
+ * @requires LuksoProfile - Component for displaying LUKSO profile information
+ * @requires viem - For handling blockchain transactions
+ */
 'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 import { parseUnits } from 'viem';
 import { useUpProvider } from './upProvider';
