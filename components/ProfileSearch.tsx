@@ -182,7 +182,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
           </div>
 
           {showDropdown && results.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-w-[300px] max-h-[200px] overflow-y-auto">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-w-[300px] max-h-[180px] overflow-y-auto">
               {results.map((result) => (
                 <button
                   key={result.id}

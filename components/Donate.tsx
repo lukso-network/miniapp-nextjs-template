@@ -111,7 +111,7 @@ export function Donate({ selectedAddress }: DonateProps) {
           className="mt-2"
           disabled={!walletConnected}
         >
-          {walletConnected ? `Donate ${amount} LYX` : 'Connect UP'}
+          {`Donate ${amount} LYX`}
         </lukso-button>
       </div>
     </div>
