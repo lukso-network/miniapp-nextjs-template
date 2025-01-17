@@ -92,6 +92,9 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
             background-url={profileData.background}
             profile-url={profileData.imgUrl}
             shadow="small"
+            border-radius="small"
+            width={280}
+            height={200}
         >
             <div slot="content" className="flex flex-col items-center">
                 {!profileData.isLoading && (
@@ -101,7 +104,7 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
                         size="large"
                         max-width="200"
                         prefix="@"
-                        class="md:mb-4"
+                        class="mb-4"
                     ></lukso-username>
                 )}
             </div>

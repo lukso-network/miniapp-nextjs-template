@@ -75,14 +75,14 @@ export function Donate({ selectedAddress }: DonateProps) {
       <div className="rounded-xl">
         <div className="flex flex-row items-center justify-center gap-2">
           <LuksoProfile address={recipientAddress} />
-          <lukso-tooltip variant="dark" trigger="mouseenter" text="Change Address" hide-on-click="true" show-arrow="" show-delay="300" hide-delay="300">
+          <lukso-tooltip variant="dark" trigger="mouseenter" text="Change Profile" hide-on-click="true" show-delay="300" hide-delay="300">
             <lukso-button
               onClick={() => setIsSearching(true)}
               variant="secondary"
               size="small"
               isIcon={true}
             >
-              <lukso-icon name="profile-recovery" size="small" color="neutral-20" secondary-color="" class=""></lukso-icon>
+              <lukso-icon name="profile-recovery" size="small" color="neutral-20"></lukso-icon>
             </lukso-button>
           </lukso-tooltip>
         </div>
@@ -109,7 +109,7 @@ export function Donate({ selectedAddress }: DonateProps) {
           variant="primary"
           size="medium"
           className="mt-2"
-          is-disabled={!walletConnected}
+          disabled={!walletConnected}
         >
           {walletConnected ? `Donate ${amount} LYX` : 'Connect UP'}
         </lukso-button>
