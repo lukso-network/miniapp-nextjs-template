@@ -2,6 +2,8 @@ import { LuksoButton } from '@lukso/web-components/dist/components/lukso-button'
 import { LuksoCard } from '@lukso/web-components/dist/components/lukso-card';
 import { LuksoInput } from '@lukso/web-components/dist/components/lukso-input';
 import { LuksoUsername } from '@lukso/web-components/dist/components/lukso-username';
+import { LuksoIcon } from '@lukso/web-components/dist/components/lukso-icon';
+import { LuksoTooltip } from '@lukso/web-components/dist/components/lukso-tooltip';
 import React from 'react';
 
 /**
@@ -34,6 +36,8 @@ declare module 'react' {
       'lukso-username': WebComponent<LuksoUsername>;
       'lukso-button': WebComponent<LuksoButton>;
       'lukso-input': WebComponent<LuksoInput>;
+      'lukso-icon': WebComponent<LuksoIcon>;
+      'lukso-tooltip': WebComponent<LuksoTooltip>;
     }
   }
 }

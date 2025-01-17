@@ -70,36 +70,28 @@ export function Donate({ selectedAddress }: DonateProps) {
   );
 
   return (
-    <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg">
-      {/* Header Section */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-l md:text-xl font-bold text-gray-900">
-            Donate LYX
-          </h2>
-          <lukso-button
-            onClick={() => setIsSearching(true)}
-            variant="secondary"
-            size="medium"
-            isFullWidth={true}
-          >
-            Change Address
-          </lukso-button>
-        </div>
+    <div className="w-full bg-white/80 backdrop-blur-md rounded-2xl">
 
-        {/* Recipient Address Display */}
-        {recipientAddress && (
-          <div className="bg-gray-20 rounded-xl p-4">
-            <div className="flex flex-col items-center">
-              <LuksoProfile address={recipientAddress} />
-            </div>
-          </div>
-        )}
+      <div className="rounded-xl">
+        <div className="flex flex-row items-center justify-center gap-2">
+          <LuksoProfile address={recipientAddress} />
+          <lukso-tooltip variant="dark" trigger="mouseenter" text="Change Address" hide-on-click="true" show-arrow="" show-delay="300" hide-delay="300">
+            <lukso-button
+              onClick={() => setIsSearching(true)}
+              variant="secondary"
+              size="small"
+              isIcon={true}
+            >
+              <lukso-icon name="profile-recovery" size="small" color="neutral-20" secondary-color="" class=""></lukso-icon>
+            </lukso-button>
+          </lukso-tooltip>
+        </div>
+      </div>
 
       {/* Amount Input and Donate Button Section */}
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-2">
         <div className="flex-1">
           <lukso-input
-            label="Amount (LYX)"
             value={minAmount.toString()}
             type="number"
             min={minAmount}
@@ -107,6 +99,7 @@ export function Donate({ selectedAddress }: DonateProps) {
             onInput={handleOnInput}
             is-full-width
             is-disabled={!walletConnected}
+            className="mt-2"
           ></lukso-input>
           {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
@@ -115,7 +108,7 @@ export function Donate({ selectedAddress }: DonateProps) {
           onClick={sendToken}
           variant="primary"
           size="medium"
-          className="mt-6" 
+          className="mt-2"
           is-disabled={!walletConnected}
         >
           {walletConnected ? `Donate ${amount} LYX` : 'Connect UP'}

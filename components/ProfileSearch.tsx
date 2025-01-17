@@ -123,7 +123,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
         <img
           src={profile.profileImages[0].src}
           alt={`${profile.name || profile.id} avatar`}
-          className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
+          className="mt-1 w-10 h-10 rounded-full flex-shrink-0 object-cover"
           onError={(e) => {
             // Fallback to blockie if image fails to load
             e.currentTarget.src = makeBlockie(profile.id);
@@ -149,11 +149,11 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
   );
 
   return (
-    <div className="w-full max-w-xl mx-auto p-6 md:p-8 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg">
+    <div className="w-full md:p-8 backdrop-blur-md rounded-2xl shadow-sm">
       {/* Header Section */}
-      <div className="flex flex-col space-y-4 mb-8">
+      <div className="flex flex-col space-y-2">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <h2 className="md:text-xl font-bold text-gray-900">
             Search Profile
           </h2>
           <lukso-button
@@ -182,26 +182,40 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
           </div>
 
           {showDropdown && results.length > 0 && (
-            <div className="mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-[200px] overflow-y-auto">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-w-[300px] max-h-[200px] overflow-y-auto">
               {results.map((result) => (
                 <button
                   key={result.id}
-                  className="w-full px-6 py-4 text-left hover:bg-gray-50 flex items-start gap-4 border-b border-gray-100 last:border-0 transition-colors"
+                  className="w-full px-2 py-4 text-left hover:bg-gray-100 flex items-start gap-4 border-b border-gray-100 last:border-0 transition-colors"
                   onClick={() => handleSelectProfile(result)}
                 >
                   {getProfileImage(result)}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-base text-gray-900 truncate">
-                      {result.name || result.id}
-                    </div>
                     {result.fullName && (
                       <div className="text-sm text-gray-600 truncate mt-0.5">
-                        {result.fullName}
+                        <lukso-username 
+                          name={result.fullName} 
+                          max-width="200" 
+                          size="large" 
+                          slice-by="8" 
+                          address-color="" 
+                          name-color="" 
+                          custom-class="" 
+                          prefix="@"
+                        ></lukso-username>
                       </div>
                     )}
-                    <div className="text-sm text-gray-500 font-mono truncate mt-1">
-                      {result.id}
-                    </div>
+                    <lukso-username 
+                      name="" 
+                      address={result.id} 
+                      max-width="200" 
+                      size="large" 
+                      slice-by="8" 
+                      address-color="" 
+                      name-color="" 
+                      custom-class="" 
+                      prefix="@">
+                    </lukso-username>
                   </div>
                 </button>
               ))}
