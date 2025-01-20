@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react';
 import { ERC725 } from '@erc725/erc725.js';
 import erc725schema from '@erc725/erc725.js/schemas/LSP3ProfileMetadata.json';
+import { useUpProvider } from './upProvider';
 
 // Constants for the IPFS gateway and RPC endpoint for the LUKSO testnet
 const IPFS_GATEWAY = 'https://api.universalprofile.cloud/ipfs/';
@@ -28,6 +29,7 @@ interface LuksoProfileProps {
 }
 
 export function LuksoProfile({ address }: LuksoProfileProps) {
+    const { setIsSearching } = useUpProvider();
     const [profileData, setProfileData] = useState<{
         imgUrl: string;
         fullName: string;
@@ -93,7 +95,7 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
             profile-url={profileData.imgUrl}
             shadow="small"
             border-radius="small"
-            width={280}
+            width={300}
             height={200}
         >
             <div slot="content" className="flex flex-col items-center">
@@ -104,9 +106,18 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
                         size="large"
                         max-width="200"
                         prefix="@"
-                        class="mb-4"
                     ></lukso-username>
                 )}
+                <lukso-tooltip variant="dark" trigger="mouseenter" text="Change Profile" hide-on-click="true" show-delay="300" hide-delay="300" class="pl-60 pb-2">
+                    <lukso-button
+                        onClick={() => setIsSearching(true)}
+                        variant="secondary"
+                        size="small"
+                        isIcon={true}
+                    >
+                        <lukso-icon name="profile-recovery" size="small" color="neutral-20"></lukso-icon>
+                    </lukso-button>
+                </lukso-tooltip>
             </div>
         </lukso-card>
     );

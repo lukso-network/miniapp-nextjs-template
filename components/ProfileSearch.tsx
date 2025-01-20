@@ -149,17 +149,17 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
   );
 
   return (
-    <div className="w-full md:p-8 backdrop-blur-md rounded-2xl shadow-sm">
+    <div className="w-full md:p-8 backdrop-blur-md rounded-2xl">
       {/* Header Section */}
       <div className="flex flex-col space-y-2">
         <div className="flex justify-between items-center">
-          <h2 className="md:text-xl font-bold text-gray-900">
+          <h2 className="md:text-l font-bold text-gray-900">
             Search Profile
           </h2>
           <lukso-button
             onClick={() => setIsSearching(false)}
             variant="primary"
-            size="medium"
+            size="small"
             isFullWidth={true}
           >
             Back
