@@ -4,6 +4,7 @@ import { UpProvider } from '@/components/upProvider';
 import { Donate } from '@/components/Donate';
 import { ProfileSearch } from '@/components/ProfileSearch';
 import { useUpProvider } from '@/components/upProvider';
+import { useState, useEffect } from 'react';
 
 // Import the LUKSO web-components library
 import('@lukso/web-components');
@@ -17,7 +18,21 @@ import('@lukso/web-components');
  * based on the isSearching state from UpProvider.
  */
 function MainContent() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // Load web component here if needed
+    setMounted(true)
+  }, [])
+
+
   const { selectedAddress, setSelectedAddress, isSearching } = useUpProvider();
+
+  if (!mounted) {
+    return null // or a loading placeholder
+  }
+
+
   return (
     <>
       <div className={`${isSearching ? 'hidden' : 'block'}`}>

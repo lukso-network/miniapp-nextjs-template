@@ -36,6 +36,15 @@ interface UpProviderContext {
 
 const UpContext = createContext<UpProviderContext | undefined>(undefined);
 
+const provider = typeof window !== "undefined" ? createClientUPProvider() : null;
+
+const client = typeof window !== "undefined" && provider
+  ? createWalletClient({
+    chain: luksoTestnet,
+    transport: custom(provider),
+  })
+  : null;
+
 export function useUpProvider() {
   const context = useContext(UpContext);
   if (!context) {
@@ -44,22 +53,11 @@ export function useUpProvider() {
   return context;
 }
 
-  interface UpProviderProps {
+interface UpProviderProps {
   children: ReactNode;
 }
 
 export function UpProvider({ children }: UpProviderProps) {
-  const [provider] = useState(() =>
-    typeof window !== "undefined" ? createClientUPProvider() : null
-  );
-  const [client] = useState(() =>
-    typeof window !== "undefined" && provider
-      ? createWalletClient({
-          chain: luksoTestnet,
-          transport: custom(provider),
-        })
-      : null
-  );
 
   const [chainId, setChainId] = useState<number>(0);
   const [accounts, setAccounts] = useState<Array<`0x${string}`>>([]);
@@ -138,7 +136,7 @@ export function UpProvider({ children }: UpProviderProps) {
       }}
     >
       <div className="min-h-screen flex items-center justify-center">
-          {children}
+        {children}
       </div>
     </UpContext.Provider>
   );
