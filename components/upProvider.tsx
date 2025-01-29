@@ -66,7 +66,7 @@ export function UpProvider({ children }: UpProviderProps) {
       });
     }
     return null;
-  }, [provider, chainId]);
+  }, [chainId]);
 
   useEffect(() => {
     let mounted = true;

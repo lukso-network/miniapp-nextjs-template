@@ -213,7 +213,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
                       address={result.id} 
                       max-width="200" 
                       size="large" 
-                      slice-by="8" 
+                      slice-by="4" 
                       address-color="" 
                       name-color="" 
                       custom-class="" 

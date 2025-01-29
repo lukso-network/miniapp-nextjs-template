@@ -30,7 +30,7 @@ interface LuksoProfileProps {
 }
 
 export function LuksoProfile({ address }: LuksoProfileProps) {
-    const { setIsSearching, chainId, walletConnected } = useUpProvider();
+    const { setIsSearching, chainId } = useUpProvider();
     const [profileData, setProfileData] = useState<{
         imgUrl: string;
         fullName: string;
@@ -47,7 +47,7 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
 
     useEffect(() => {
         async function fetchProfileImage() {
-            if (!address && !walletConnected) return;
+            if (!address) return;
 
             setProfileData(prev => ({ ...prev, isLoading: true }));
 
