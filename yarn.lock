@@ -360,10 +360,10 @@
   dependencies:
     "@lit-labs/ssr-dom-shim" "^1.2.0"
 
-"@lukso/up-provider@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@lukso/up-provider/-/up-provider-0.3.1.tgz#43c3b706d06c45cbbca5e0d0c0d5ec7aca3b6f3d"
-  integrity sha512-sDwROYTp16FTpwp85I4l7Lf1yDDM6PzLs6mEuJ0P5Sy3MYqN0iT8/28KX+zRKQbsF17R7dGX+VJq9gZyFv8tTQ==
+"@lukso/up-provider@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@lukso/up-provider/-/up-provider-0.3.2.tgz#72bf11e3e2f46f8e9661cb173f6f009cdec1cdd2"
+  integrity sha512-/Fp2WnhDyGuBANdt2ZTQuRLla1Yov6vYXRAT5N+6zdfKx3544daVMSl8DVGw2bBsA0QvEfQCAMiaxMsTISVs7A==
   dependencies:
     "@mixer/postmessage-rpc" "^1.1.4"
     "@types/debug" "^4.1.12"

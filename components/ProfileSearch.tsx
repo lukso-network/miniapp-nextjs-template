@@ -21,6 +21,9 @@ import { request, gql } from 'graphql-request';
 import makeBlockie from 'ethereum-blockies-base64';
 import { useUpProvider } from './upProvider';
 
+const ENVIO_TESTNET_URL = 'https://envio.lukso-testnet.universal.tech/v1/graphql';
+const ENVIO_MAINNET_URL = 'https://envio.lukso-mainnet.universal.tech/v1/graphql';
+
 const gqlQuery = gql`
   query MyQuery($id: String!) {
     search_profiles(args: { search: $id }) {
@@ -57,12 +60,12 @@ type SearchProps = {
 };
 
 export function ProfileSearch({ onSelectAddress }: SearchProps) {
-  const { setIsSearching } = useUpProvider();
+  const { chainId, setIsSearching } = useUpProvider();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-
+  
   const handleSearch = useCallback(
     async (searchQuery: string, forceSearch: boolean = false) => {
       setQuery(searchQuery);
@@ -80,12 +83,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
 
       setLoading(true);
       try {
+        const envioUrl = chainId === 42 ? ENVIO_MAINNET_URL : ENVIO_TESTNET_URL;
         const { search_profiles: data } = (await request(
-          'https://envio.lukso-testnet.universal.tech/v1/graphql',
+          envioUrl,
           gqlQuery,
           { id: searchQuery }
         )) as { search_profiles: Profile[] };
-
         setResults(data);
         setShowDropdown(true);
       } catch (error) {
@@ -95,7 +98,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
         setLoading(false);
       }
     },
-    []
+    [chainId]
   );
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

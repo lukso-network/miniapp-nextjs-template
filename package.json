@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@erc725/erc725.js": "^0.27.2",
-    "@lukso/up-provider": "^0.3.1",
+    "@lukso/up-provider": "^0.3.2",
     "@lukso/web-components": "^1.104.0",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.1",
