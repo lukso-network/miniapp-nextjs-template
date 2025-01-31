@@ -20,6 +20,7 @@ import { useCallback, useState } from 'react';
 import { request, gql } from 'graphql-request';
 import makeBlockie from 'ethereum-blockies-base64';
 import { useUpProvider } from './upProvider';
+import Image from 'next/image';
 
 const ENVIO_TESTNET_URL = 'https://envio.lukso-testnet.universal.tech/v1/graphql';
 const ENVIO_MAINNET_URL = 'https://envio.lukso-mainnet.universal.tech/v1/graphql';
@@ -123,10 +124,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
   const getProfileImage = (profile: Profile) => {
     if (profile.profileImages && profile.profileImages.length > 0) {
       return (
-        <img
+        <Image
           src={profile.profileImages[0].src}
           alt={`${profile.name || profile.id} avatar`}
           className="mt-1 w-10 h-10 rounded-full flex-shrink-0 object-cover"
+          width={40}
+          height={40}
           onError={(e) => {
             // Fallback to blockie if image fails to load
             e.currentTarget.src = makeBlockie(profile.id);
@@ -136,10 +139,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
     }
 
     return (
-      <img
+      <Image
         src={makeBlockie(profile.id)}
         alt={`${profile.name || profile.id} avatar`}
         className="w-10 h-10 rounded-full flex-shrink-0"
+        width={40}
+        height={40}
       />
     );
   };

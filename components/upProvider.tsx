@@ -120,7 +120,7 @@ export function UpProvider({ children }: UpProviderProps) {
         provider.removeListener("chainChanged", chainChanged);
       };
     }
-  }, [client, provider, accounts.length, contextAccounts.length]);
+  }, [client, accounts.length, contextAccounts.length]);
 
   return (
     <UpContext.Provider

@@ -88,7 +88,7 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
         }
 
         fetchProfileImage();
-    }, [address]);
+    }, [address, chainId]);
 
     return (
         <lukso-card
