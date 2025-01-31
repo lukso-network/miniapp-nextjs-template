@@ -20,6 +20,10 @@ import { useCallback, useState } from 'react';
 import { request, gql } from 'graphql-request';
 import makeBlockie from 'ethereum-blockies-base64';
 import { useUpProvider } from './upProvider';
+import Image from 'next/image';
+
+const ENVIO_TESTNET_URL = 'https://envio.lukso-testnet.universal.tech/v1/graphql';
+const ENVIO_MAINNET_URL = 'https://envio.lukso-mainnet.universal.tech/v1/graphql';
 
 const gqlQuery = gql`
   query MyQuery($id: String!) {
@@ -57,12 +61,12 @@ type SearchProps = {
 };
 
 export function ProfileSearch({ onSelectAddress }: SearchProps) {
-  const { setIsSearching } = useUpProvider();
+  const { chainId, setIsSearching } = useUpProvider();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-
+  
   const handleSearch = useCallback(
     async (searchQuery: string, forceSearch: boolean = false) => {
       setQuery(searchQuery);
@@ -80,12 +84,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
 
       setLoading(true);
       try {
+        const envioUrl = chainId === 42 ? ENVIO_MAINNET_URL : ENVIO_TESTNET_URL;
         const { search_profiles: data } = (await request(
-          'https://envio.lukso-testnet.universal.tech/v1/graphql',
+          envioUrl,
           gqlQuery,
           { id: searchQuery }
         )) as { search_profiles: Profile[] };
-
         setResults(data);
         setShowDropdown(true);
       } catch (error) {
@@ -95,7 +99,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
         setLoading(false);
       }
     },
-    []
+    [chainId]
   );
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -120,10 +124,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
   const getProfileImage = (profile: Profile) => {
     if (profile.profileImages && profile.profileImages.length > 0) {
       return (
-        <img
+        <Image
           src={profile.profileImages[0].src}
           alt={`${profile.name || profile.id} avatar`}
           className="mt-1 w-10 h-10 rounded-full flex-shrink-0 object-cover"
+          width={40}
+          height={40}
           onError={(e) => {
             // Fallback to blockie if image fails to load
             e.currentTarget.src = makeBlockie(profile.id);
@@ -133,10 +139,12 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
     }
 
     return (
-      <img
+      <Image
         src={makeBlockie(profile.id)}
         alt={`${profile.name || profile.id} avatar`}
         className="w-10 h-10 rounded-full flex-shrink-0"
+        width={40}
+        height={40}
       />
     );
   };
@@ -210,7 +218,7 @@ export function ProfileSearch({ onSelectAddress }: SearchProps) {
                       address={result.id} 
                       max-width="200" 
                       size="large" 
-                      slice-by="8" 
+                      slice-by="4" 
                       address-color="" 
                       name-color="" 
                       custom-class="" 

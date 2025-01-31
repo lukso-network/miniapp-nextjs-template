@@ -36,6 +36,7 @@ export function Donate({ selectedAddress }: DonateProps) {
   const [amount, setAmount] = useState<number>(minAmount);
   const [error, setError] = useState('');
   const recipientAddress = selectedAddress || contextAccounts[0];
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateAmount = useCallback((value: number) => {
     if (value < minAmount) {
@@ -53,12 +54,28 @@ export function Donate({ selectedAddress }: DonateProps) {
   }, [amount, validateAmount]);
 
   const sendToken = async () => {
-    if (!client || !walletConnected || !amount) return;
-    await client.sendTransaction({
-      account: accounts[0] as `0x${string}`,
-      to: recipientAddress as `0x${string}`,
-      value: parseUnits(amount.toString(), 18),
-    });
+    if (!client || !walletConnected || !amount) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const tx = await client.sendTransaction({
+        account: accounts[0] as `0x${string}`,
+        to: recipientAddress as `0x${string}`,
+        value: parseUnits(amount.toString(), 18),
+      });
+
+      // Wait for transaction confirmation
+      await client.waitForTransactionReceipt({ hash: tx });
+      
+      // Reset amount after successful transaction
+      setAmount(minAmount);
+    } catch (err) {
+      console.error('Transaction failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOnInput = useCallback(
@@ -99,6 +116,7 @@ export function Donate({ selectedAddress }: DonateProps) {
           variant="primary"
           size="medium"
           className="mt-2"
+          isLoading={isLoading}
           disabled={!walletConnected}
         >
           {`Donate ${amount} LYX`}

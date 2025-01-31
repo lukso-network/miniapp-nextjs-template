@@ -10,6 +10,8 @@ This template showcases:
 - Integrates the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library for ready-to-use branded components
 - Uses the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library to fetch profile data from the blockchain
 
+> **Cursor Tip:** You can rename this README.md file to `repo.cursorrules` for better AI development experience using Cursor.
+
 ## Key Features
 
 ### UP-Provider Integration
@@ -43,6 +45,26 @@ yarn dev
 ```
 
 3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.(Note that the Grid context is not available in the local environment)
+
+4. Testing your mini-app on the Grid:
+
+We're using `localtunnel` to test the mini-app on the Grid. This library helps us to generate a public URL that can be used to add the mini-app to the Grid.
+
+> Alternatively, you can use free cloud deployment services like Vercel, Replit, etc.
+
+Globally install `localtunnel`: 
+
+```bash
+npm install -g localtunnel
+```
+
+In the second terminal, run:
+
+```bash
+lt --port <LOCALHOST_PORT>
+```
+
+You can use this URL to add the mini-app to the Grid. 
 
 ## Project Structure
 

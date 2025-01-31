@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     silenceDeprecations: ['legacy-js-api'],
     quietDeps: true,
   },
+  images: {
+    domains: ['api.universalprofile.cloud']
+  },
 };
 
 export default nextConfig;

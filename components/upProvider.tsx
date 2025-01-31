@@ -17,9 +17,9 @@
 'use client';
 
 import { createClientUPProvider } from "@lukso/up-provider";
-import { createWalletClient, custom } from "viem";
-import { luksoTestnet } from "viem/chains";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createWalletClient, custom, WalletClient } from "viem";
+import { lukso, luksoTestnet } from "viem/chains";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
 
 interface UpProviderContext {
   provider: any;
@@ -36,6 +36,8 @@ interface UpProviderContext {
 
 const UpContext = createContext<UpProviderContext | undefined>(undefined);
 
+const provider = typeof window !== "undefined" ? createClientUPProvider() : null;
+
 export function useUpProvider() {
   const context = useContext(UpContext);
   if (!context) {
@@ -44,29 +46,27 @@ export function useUpProvider() {
   return context;
 }
 
-  interface UpProviderProps {
+interface UpProviderProps {
   children: ReactNode;
 }
 
 export function UpProvider({ children }: UpProviderProps) {
-  const [provider] = useState(() =>
-    typeof window !== "undefined" ? createClientUPProvider() : null
-  );
-  const [client] = useState(() =>
-    typeof window !== "undefined" && provider
-      ? createWalletClient({
-          chain: luksoTestnet,
-          transport: custom(provider),
-        })
-      : null
-  );
-
   const [chainId, setChainId] = useState<number>(0);
   const [accounts, setAccounts] = useState<Array<`0x${string}`>>([]);
   const [contextAccounts, setContextAccounts] = useState<Array<`0x${string}`>>([]);
   const [walletConnected, setWalletConnected] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<`0x${string}` | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  const client: WalletClient | null = useMemo(() => {
+    if (provider && chainId) {
+      return createWalletClient({
+        chain: chainId === 42 ? lukso : luksoTestnet,
+        transport: custom(provider),
+      });
+    }
+    return null;
+  }, [chainId]);
 
   useEffect(() => {
     let mounted = true;
@@ -120,7 +120,7 @@ export function UpProvider({ children }: UpProviderProps) {
         provider.removeListener("chainChanged", chainChanged);
       };
     }
-  }, [client, provider, accounts.length, contextAccounts.length]);
+  }, [client, accounts.length, contextAccounts.length]);
 
   return (
     <UpContext.Provider
@@ -138,7 +138,7 @@ export function UpProvider({ children }: UpProviderProps) {
       }}
     >
       <div className="min-h-screen flex items-center justify-center">
-          {children}
+        {children}
       </div>
     </UpContext.Provider>
   );

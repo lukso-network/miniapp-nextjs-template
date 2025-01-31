@@ -37,14 +37,14 @@ jobs:
       - uses: actions/setup-node@v3 # Latest version as of now
         with:
           node-version: '22.12.0'
-          cache: 'npm'
+          cache: 'yarn'
 
       - name: ⚙️ Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Build
         run: |
-          npx @cloudflare/next-on-pages
+          yarn dlx @cloudflare/next-on-pages
 
       - name: 'Deploy release'
         if: ${{ steps.extract_branch.outputs.branch_name == '' }}
@@ -52,7 +52,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          npx wrangler pages deploy --project-name "${{ secrets.CF_PROJECT_NAME }}" .vercel/output/static
+          yarn dlx wrangler pages deploy --project-name "${{ secrets.CF_PROJECT_NAME }}" .vercel/output/static
 
       - name: Deploy ${{ steps.extract_branch.outputs.branch_name }} (PR)
         if: ${{ steps.extract_branch.outputs.branch_name != '' }}
@@ -60,7 +60,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          npx wrangler pages deploy --project-name "${{ secrets.CF_PROJECT_NAME }}" --branch "${{ steps.extract_branch.outputs.branch_name }}" .vercel/output/static | tee output.log
+          yarn dlx wrangler pages deploy --project-name "${{ secrets.CF_PROJECT_NAME }}" --branch "${{ steps.extract_branch.outputs.branch_name }}" .vercel/output/static | tee output.log
           sed < output.log -n 's#.*Take a peek over at \(.*\)$#specific_url=\1#p' >> $GITHUB_OUTPUT
         id: deploy
 
