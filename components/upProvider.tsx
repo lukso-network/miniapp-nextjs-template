@@ -17,9 +17,9 @@
 'use client';
 
 import { createClientUPProvider } from "@lukso/up-provider";
-import { createWalletClient, custom, WalletClient } from "viem";
+import { createWalletClient, custom } from "viem";
 import { lukso, luksoTestnet } from "viem/chains";
-import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface UpProviderContext {
   provider: any;
@@ -58,7 +58,7 @@ export function UpProvider({ children }: UpProviderProps) {
   const [selectedAddress, setSelectedAddress] = useState<`0x${string}` | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  const client: WalletClient | null = useMemo(() => {
+  const client = (() => {
     if (provider && chainId) {
       return createWalletClient({
         chain: chainId === 42 ? lukso : luksoTestnet,
@@ -66,7 +66,7 @@ export function UpProvider({ children }: UpProviderProps) {
       });
     }
     return null;
-  }, [chainId]);
+  })();
 
   useEffect(() => {
     let mounted = true;

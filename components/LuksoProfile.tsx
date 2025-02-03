@@ -117,7 +117,7 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
                         size="small"
                         isIcon={true}
                     >
-                        <lukso-icon name="profile-recovery" size="small" color="neutral-20"></lukso-icon>
+                        <lukso-icon name="profile-recovery" size="small" color="neutral-20" class="pl-3 pr-3"></lukso-icon>
                     </lukso-button>
                 </lukso-tooltip>
             </div>
