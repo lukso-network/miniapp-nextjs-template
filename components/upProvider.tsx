@@ -20,10 +20,12 @@ import { createClientUPProvider } from "@lukso/up-provider";
 import { createWalletClient, custom } from "viem";
 import { lukso, luksoTestnet } from "viem/chains";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { WalletClient } from "viem/clients/createWalletClient";
+import { UPClientProvider } from "@lukso/up-provider/src/client";
 
 interface UpProviderContext {
-  provider: any;
-  client: any;
+  provider: UPClientProvider;
+  client: WalletClient;
   chainId: number;
   accounts: Array<`0x${string}`>;
   contextAccounts: Array<`0x${string}`>;
@@ -57,16 +59,17 @@ export function UpProvider({ children }: UpProviderProps) {
   const [walletConnected, setWalletConnected] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<`0x${string}` | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [client, setClient] = useState<WalletClient>(null);
 
-  const client = (() => {
+  useEffect(() => {
     if (provider && chainId) {
-      return createWalletClient({
+      const newClient = createWalletClient({
         chain: chainId === 42 ? lukso : luksoTestnet,
         transport: custom(provider),
       });
+      setClient(newClient);
     }
-    return null;
-  })();
+  }, [provider, chainId]);
 
   useEffect(() => {
     let mounted = true;
