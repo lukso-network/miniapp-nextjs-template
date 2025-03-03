@@ -72,6 +72,8 @@ export function UpProvider({ children }: UpProviderProps) {
     null
   );
   const [isSearching, setIsSearching] = useState(false);
+  const [account] = accounts ?? [];
+  const [contextAccount] = contextAccounts ?? [];
 
   const client = useMemo(() => {
     if (provider && chainId) {
@@ -90,10 +92,6 @@ export function UpProvider({ children }: UpProviderProps) {
       try {
         if (!client || !provider) return;
 
-        const _chainId = (await provider.request("eth_chainId")) as number;
-        if (!mounted) return;
-        setChainId(_chainId);
-
         const _accounts = (await provider.request(
           "eth_accounts",
           []
@@ -101,10 +99,14 @@ export function UpProvider({ children }: UpProviderProps) {
         if (!mounted) return;
         setAccounts(_accounts);
 
+        const _chainId = (await provider.request("eth_chainId")) as number;
+        if (!mounted) return;
+        setChainId(_chainId);
+
         const _contextAccounts = provider.contextAccounts;
         if (!mounted) return;
         setContextAccounts(_contextAccounts);
-        setWalletConnected(_accounts.length > 0 && _contextAccounts.length > 0);
+        setWalletConnected(_accounts[0] != null && _contextAccounts[0] != null);
       } catch (error) {
         console.error(error);
       }
@@ -115,12 +117,12 @@ export function UpProvider({ children }: UpProviderProps) {
     if (provider) {
       const accountsChanged = (_accounts: Array<`0x${string}`>) => {
         setAccounts(_accounts);
-        setWalletConnected(_accounts.length > 0 && contextAccounts.length > 0);
+        setWalletConnected(_accounts[0] != null && contextAccount != null);
       };
 
       const contextAccountsChanged = (_accounts: Array<`0x${string}`>) => {
         setContextAccounts(_accounts);
-        setWalletConnected(accounts.length > 0 && _accounts.length > 0);
+        setWalletConnected(account != null && _accounts[0] != null);
       };
 
       const chainChanged = (_chainId: number) => {
@@ -145,7 +147,7 @@ export function UpProvider({ children }: UpProviderProps) {
     // you also need to look at the first account rather
     // then the length or the whole array. Unfortunately react doesn't properly
     // look at array values like vue or knockout.
-  }, [client, accounts[0], contextAccounts[0]]);
+  }, [client, account, contextAccount]);
 
   // There has to be a useMemo to make sure the context object doesn't change on every
   // render.
