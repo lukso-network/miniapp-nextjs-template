@@ -5,6 +5,7 @@ A template project demonstrating how to build mini-apps using the [up-provider p
 ## Overview
 
 This template showcases:
+
 - [UP-Provider](https://github.com/lukso-network/tools-up-provider) implementation and wallet connection on the Grid
 - Profile search functionality using Envio integration for fast querying
 - Integrates the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library for ready-to-use branded components
@@ -15,56 +16,53 @@ This template showcases:
 ## Key Features
 
 ### UP-Provider Integration
+
 The template demonstrates how to:
+
 - Connect to Universal Profile browser extension from the Grid
 - Manage UP contexts on the Grid
 
 ### Envio Integration
+
 Shows how to:
+
 - Query the LUKSO Envio indexer
 - Search for Universal Profiles
 - Display profile information and images
 
 ### Web Components
+
 Shows how to:
+
 - Use the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile card
 
 ### ERC-725.js
+
 Shows how to:
+
 - Use the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library to fetch profile data from the blockchain
 
 ## Getting Started
 
 1. Install dependencies:
+
 ```bash
 yarn install
 ```
+
 2. Run the development server:
+
 ```bash
 yarn dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.(Note that the Grid context is not available in the local environment)
+3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 4. Testing your mini-app on the Grid:
 
-We're using `localtunnel` to test the mini-app on the Grid. This library helps us to generate a public URL that can be used to add the mini-app to the Grid.
+Simply add your localhost url as a mini-app to your Grid!
 
-> Alternatively, you can use free cloud deployment services like Vercel, Replit, etc.
-
-Globally install `localtunnel`: 
-
-```bash
-npm install -g localtunnel
-```
-
-In the second terminal, run:
-
-```bash
-lt --port <LOCALHOST_PORT>
-```
-
-You can use this URL to add the mini-app to the Grid. 
+> Alternatively, you can use free cloud deployment services like Vercel, Replit, etc. and use the url provided from those services.
 
 ## Project Structure
 
@@ -77,9 +75,8 @@ You can use this URL to add the mini-app to the Grid.
 
 - [LUKSO Documentation](https://docs.lukso.tech/) - Learn more about developing on LUKSO
 - [UP Browser Extension](https://docs.lukso.tech/install-up-browser-extension) - Install the Universal Profile Browser Extension
-- [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) - Learn more about the erc725js library 
+- [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) - Learn more about the erc725js library
 - [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) - Learn more about the @lukso/web-components library
-
 
 ## Contributing
 

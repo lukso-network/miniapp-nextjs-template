@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     quietDeps: true,
   },
   images: {
-    domains: ['api.universalprofile.cloud']
+    remotePatterns: [{ hostname: 'api.universalprofile.cloud' }],
   },
 };
 
