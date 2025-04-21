@@ -1,7 +1,7 @@
 "use client";
 
 import { UpProvider } from "@/components/upProvider";
-import { Donate } from "@/components/Donate";
+import { PermissionManager } from "@/components/PermissionManager";
 import { ProfileSearch } from "@/components/ProfileSearch";
 import { useUpProvider } from "@/components/upProvider";
 import { useState, useEffect } from "react";
@@ -13,11 +13,11 @@ if (typeof window !== "undefined") {
 }
 
 /**
- * Main content component that handles the conditional rendering of Donate and ProfileSearch components.
+ * Main content component that handles the conditional rendering of PermissionManager and ProfileSearch components.
  * Utilizes the UpProvider context to manage selected addresses and search state.
  *
  * @component
- * @returns {JSX.Element} A component that toggles between Donate and ProfileSearch views
+ * @returns {JSX.Element} A component that toggles between PermissionManager and ProfileSearch views
  * based on the isSearching state from UpProvider.
  */
 function MainContent() {
@@ -39,7 +39,7 @@ function MainContent() {
   return (
     <>
       <div className={`${isSearching ? "hidden" : "block"}`}>
-        <Donate selectedAddress={selectedAddress} />
+        <PermissionManager />
       </div>
 
       <div className={`${!isSearching ? "hidden" : "block"}`}>
@@ -51,7 +51,7 @@ function MainContent() {
 
 /**
  * Root component of the application that wraps the main content with the UpProvider context.
- * Serves as the entry point for the donation and profile search functionality.
+ * Serves as the entry point for the permission management functionality.
  *
  * @component
  * @returns {JSX.Element} The wrapped MainContent component with UpProvider context
