@@ -97,8 +97,8 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
             profile-url={profileData.imgUrl}
             shadow="small"
             border-radius="small"
-            width={300}
-            height={200}
+            width={220}
+            height={140}
         >
             <div slot="content" className="flex flex-col items-center">
                 {!profileData.isLoading && (
@@ -108,18 +108,9 @@ export function LuksoProfile({ address }: LuksoProfileProps) {
                         size="large"
                         max-width="200"
                         prefix="@"
+                        class="pb-4"
                     ></lukso-username>
                 )}
-                <lukso-tooltip variant="dark" trigger="mouseenter" text="Change Profile" hide-on-click="true" show-delay="300" hide-delay="300" class="pl-60 pb-2">
-                    <lukso-button
-                        onClick={() => setIsSearching(true)}
-                        variant="secondary"
-                        size="small"
-                        isIcon={true}
-                    >
-                        <lukso-icon name="profile-recovery" size="small" color="neutral-20" class="pl-3 pr-3"></lukso-icon>
-                    </lukso-button>
-                </lukso-tooltip>
             </div>
         </lukso-card>
     );

@@ -18,131 +18,16 @@
  */
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
-import { parseUnits } from "viem";
+import { useCallback, useState, useMemo } from "react";
 import { useUpProvider } from "./upProvider";
 import { LuksoProfile } from "./LuksoProfile";
-import { waitForTransactionReceipt } from "viem/actions";
 import { ERC725 } from "@erc725/erc725.js";
-import erc725schema from "@erc725/erc725.js/schemas/LSP3ProfileMetadata.json"; // Assuming LSP3 is needed for profile display, maybe LSP6 for permissions? Let's check ERC725js docs if needed.
 import LSP6Schema from "@erc725/erc725.js/schemas/LSP6KeyManager.json";
 import { encodeFunctionData, keccak256, toHex, isAddress } from "viem";
 import { request, gql } from "graphql-request";
 import makeBlockie from "ethereum-blockies-base64";
 import Image from "next/image";
 
-const minAmount = 1.0;
-const maxAmount = 1000;
-
-interface DonateProps {
-  selectedAddress?: `0x${string}` | null;
-}
-
-export function Donate({ selectedAddress }: DonateProps) {
-  const { client, accounts, contextAccounts, walletConnected } =
-    useUpProvider();
-  const [amount, setAmount] = useState<number>(minAmount);
-  const [error, setError] = useState("");
-  const recipientAddress = selectedAddress || contextAccounts[0];
-  const [isLoading, setIsLoading] = useState(false);
-
-  const validateAmount = useCallback((value: number) => {
-    if (value < minAmount) {
-      setError(`Amount must be at least ${minAmount} LYX.`);
-    } else if (value > maxAmount) {
-      setError(`Amount cannot exceed ${maxAmount} LYX.`);
-    } else {
-      setError("");
-    }
-    setAmount(value);
-  }, []);
-
-  useEffect(() => {
-    validateAmount(amount);
-  }, [amount, validateAmount]);
-
-  const sendToken = useCallback(async () => {
-    if (!client || !walletConnected || !amount) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const tx = await client.sendTransaction({
-        account: accounts[0] as `0x${string}`,
-        to: recipientAddress as `0x${string}`,
-        value: parseUnits(amount.toString(), 18),
-        chain: client.chain,
-      });
-
-      // Wait for transaction confirmation
-      await waitForTransactionReceipt(client, { hash: tx });
-
-      // Reset amount after successful transaction
-      setAmount(minAmount);
-    } catch (err) {
-      console.error("Transaction failed:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accounts, amount, client, recipientAddress, walletConnected]);
-
-  const sendTokenKeyPress = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        sendToken();
-      }
-    },
-    [sendToken]
-  );
-
-  const handleOnInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = Number.parseFloat(e.target.value);
-      validateAmount(value);
-    },
-    [validateAmount]
-  );
-
-  return (
-    <div className="w-full bg-white/80 backdrop-blur-md rounded-2xl">
-      <div className="rounded-xl">
-        <div className="flex flex-row items-center justify-center gap-2">
-          <LuksoProfile address={recipientAddress} />
-        </div>
-      </div>
-
-      {/* Amount Input and Donate Button Section */}
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <lukso-input
-            value={minAmount.toString()}
-            type="number"
-            min={minAmount}
-            max={maxAmount}
-            onInput={handleOnInput}
-            is-full-width
-            is-disabled={!walletConnected}
-            className="mt-2"
-          />
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-        </div>
-
-        <lukso-button
-          onClick={sendToken}
-          onKeyPress={sendTokenKeyPress}
-          variant="primary"
-          size="medium"
-          className="mt-2"
-          isLoading={isLoading}
-          disabled={!walletConnected}
-        >
-          {`Donate ${amount} LYX`}
-        </lukso-button>
-      </div>
-    </div>
-  );
-}
 
 export function PermissionManager() {
   const { client, accounts, contextAccounts, chainId, walletConnected } =
@@ -266,7 +151,7 @@ export function PermissionManager() {
         // 2. Check if the controller already exists
         const lowerCaseControllerAddress = controllerAddress.toLowerCase();
         const isExistingController = currentControllers.some(
-            (addr) => addr && typeof addr === 'string' && addr.toLowerCase() === lowerCaseControllerAddress
+          (addr) => addr && typeof addr === 'string' && addr.toLowerCase() === lowerCaseControllerAddress
         );
 
         // 3. Determine new/merged permissions
@@ -276,19 +161,19 @@ export function PermissionManager() {
 
         if (isExistingController) {
           try {
-              const existingPermissionsData = await erc725Instance.getData({
-                  keyName: "AddressPermissions:Permissions:<address>",
-                  dynamicKeyParts: controllerAddress,
-              });
-              existingPermissionsValue = existingPermissionsData?.value as string | null;
+            const existingPermissionsData = await erc725Instance.getData({
+              keyName: "AddressPermissions:Permissions:<address>",
+              dynamicKeyParts: controllerAddress,
+            });
+            existingPermissionsValue = existingPermissionsData?.value as string | null;
 
-              if (existingPermissionsValue && existingPermissionsValue !== '0x') {
-                  const decodedExisting = erc725Instance.decodePermissions(existingPermissionsValue);
-                  // Merge: New permissions overwrite/add to existing ones
-                  finalPermissions = { ...decodedExisting, ...newPermissions };
-              }
+            if (existingPermissionsValue && existingPermissionsValue !== '0x') {
+              const decodedExisting = erc725Instance.decodePermissions(existingPermissionsValue);
+              // Merge: New permissions overwrite/add to existing ones
+              finalPermissions = { ...decodedExisting, ...newPermissions };
+            }
           } catch (err) {
-              console.warn(`Could not fetch/decode existing permissions for ${controllerAddress}, proceeding with new permissions. Error:`, err);
+            console.warn(`Could not fetch/decode existing permissions for ${controllerAddress}, proceeding with new permissions. Error:`, err);
           }
         }
 
@@ -313,10 +198,10 @@ export function PermissionManager() {
           const updatedControllersArray = [...currentControllers, controllerAddress];
           // Encode this entire updated array into bytes
           const encodedUpdatedArray = erc725Instance.encodeData([
-              {
-                  keyName: "AddressPermissions[]",
-                  value: updatedControllersArray
-              }
+            {
+              keyName: "AddressPermissions[]",
+              value: updatedControllersArray
+            }
           ]).values[0];
 
           // Add the array key and the encoded array value to the batch
@@ -370,16 +255,9 @@ export function PermissionManager() {
 
   // --- UI Rendering ---
   return (
-    <div className="w-[600px] max-h-[900px] overflow-y-auto bg-white/80 backdrop-blur-md rounded-2xl p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-4">
-        Manage Profile Permissions
-      </h1>
-      <p className="text-sm text-center text-gray-600 mb-6">
-        Assign roles to other profiles to manage this Universal Profile (
-        {userUpAddress
-          ? `${userUpAddress.slice(0, 6)}...${userUpAddress.slice(-4)}`
-          : "Loading UP..."}
-        )
+    <div className="w-full max-h-[900px] overflow-y-auto bg-white/80 backdrop-blur-md rounded-2xl p-6 space-y-6">
+      <p className="text-md text-center text-gray-600 mb-6">
+        Assign roles to other profiles to manage this Universal Profile <lukso-username address={userUpAddress}></lukso-username>
       </p>
 
       {!walletConnected && (
@@ -388,100 +266,100 @@ export function PermissionManager() {
         </div>
       )}
 
-      {ROLES.map((role) => (
-        <div
-          key={role}
-          className="bg-white p-4 rounded-lg shadow space-y-3 border border-gray-200"
-        >
-          <h2 className="text-lg font-semibold text-gray-700">{role}</h2>
+      {/* Flex container for the roles */}
+      <div className="flex flex-wrap justify-around gap-2 mb-12">
+        {ROLES.map((role) => (
+          <div
+            key={role}
+            className="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3 min-w-[250px] max-w-sm flex-1"
+          >
+            <h2 className="text-lg font-semibold text-gray-700 text-center">{role}</h2>
 
-          {selectedAddresses[role] ? (
+            {selectedAddresses[role] ? (
             // Show selected profile and Add/Clear buttons
-            <div className="space-y-3">
-              <LuksoProfile address={selectedAddresses[role] as string} />
-              <div className="flex gap-2 justify-end">
-                <lukso-button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => clearSelection(role)}
-                  disabled={loadingStates[`add-${role}`]}
-                >
-                  Clear Selection
-                </lukso-button>
-                <lukso-button
-                  variant="primary"
-                  size="small"
-                  onClick={() => grantPermission(role)}
-                  isLoading={loadingStates[`add-${role}`]}
-                  disabled={!walletConnected || loadingStates[`add-${role}`]}
-                >
-                  Add {role}
-                </lukso-button>
-              </div>
-            </div>
-          ) : (
-            // Show search input and results
-            <div className="relative space-y-2">
-              <lukso-input
-                placeholder={`Search for ${role}... (min 3 chars)`}
-                value={searchQueries[role]}
-                onInput={(e: any) => handleSearch(role, e.target.value)} // Type assertion needed for custom event
-                is-full-width
-                is-disabled={!walletConnected || !!loadingStates[`search-${role}`]}
-              />
-              {loadingStates[`search-${role}`] && (
-                <p className="text-xs text-gray-500">Searching...</p>
-              )}
-
-              {showSearchDropdown[role] && searchResults[role].length > 0 && (
-                <div className="absolute bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-full max-h-[180px] overflow-y-auto mt-1">
-                  {searchResults[role].map((profile) => (
-                    <button
-                      key={profile.id}
-                      className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors"
-                      onClick={() => handleSelectProfile(role, profile)}
-                    >
-                      {getProfileImage(profile)}
-                      <div className="flex-1 min-w-0">
-                        <span className="block font-medium text-sm text-gray-800 truncate">
-                          {profile.fullName ||
-                            profile.name ||
-                            "Unnamed Profile"}
-                        </span>
-                        <span className="block text-xs text-gray-500 truncate">
-                          {profile.id}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+              <div className="space-y-3 flex flex-col items-center">
+                <LuksoProfile address={selectedAddresses[role] as string} />
+                <div className="flex gap-2 justify-center">
+                  <lukso-button
+                    variant="secondary"
+                    size="small"
+                    onClick={() => clearSelection(role)}
+                    disabled={loadingStates[`add-${role}`]}
+                  >
+                    Clear
+                  </lukso-button>
+                  <lukso-button
+                    variant="primary"
+                    size="small"
+                    onClick={() => grantPermission(role)}
+                    isLoading={loadingStates[`add-${role}`]}
+                    disabled={!walletConnected || loadingStates[`add-${role}`]}
+                  >
+                    Add {role}
+                  </lukso-button>
                 </div>
-              )}
-              {showSearchDropdown[role] &&
-                searchResults[role].length === 0 &&
-                searchQueries[role].length >= 3 &&
-                !loadingStates[`search-${role}`] && (
-                  <p className="text-xs text-gray-500 pl-1 pt-1">
-                    No profiles found.
-                  </p>
+              </div>
+            ) : (
+              // Show search input and results
+              <div className="relative space-y-2">
+                <lukso-input
+                    placeholder={`Search for ${role}`}
+                    value={searchQueries[role]}
+                    onInput={(e: any) => handleSearch(role, e.target.value)} // Type assertion needed for custom event
+                    is-full-width
+                    is-disabled={!walletConnected || !!loadingStates[`search-${role}`]}
+                  />
+                  {loadingStates[`search-${role}`] && (
+                    <p className="text-xs text-gray-500">Searching...</p>
+                  )}
+
+                {showSearchDropdown[role] && searchResults[role].length > 0 && (
+                  <div className="absolute bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-full max-h-[180px] overflow-y-auto mt-1">
+                    {searchResults[role].map((profile) => (
+                      <button
+                        key={profile.id}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors"
+                        onClick={() => handleSelectProfile(role, profile)}
+                      >
+                        {getProfileImage(profile)}
+                        <div className="flex-1 min-w-0">
+                          <span className="block font-medium text-sm text-gray-800 truncate">
+                            {profile.fullName ||
+                              profile.name ||
+                              "Unnamed Profile"}
+                          </span>
+                          <span className="block text-xs text-gray-500 truncate">
+                            {profile.id}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
-            </div>
-          )}
-        </div>
-      ))}
+                {showSearchDropdown[role] &&
+                  searchResults[role].length === 0 &&
+                  searchQueries[role].length >= 3 &&
+                  !loadingStates[`search-${role}`] && (
+                    <p className="text-xs text-gray-500 pl-1 pt-1">
+                      No profiles found.
+                    </p>
+                  )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Display Permission Manager (User's own UP) */}
-      <div className="bg-lime-50 p-4 rounded-lg shadow border border-lime-200 space-y-2">
-        <h2 className="text-lg font-semibold text-lime-700">
-          Permission Manager (You)
+      <div className="bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+        <h2 className="text-lg font-semibold text-lime-700 text-center">
+          Permission Manager
         </h2>
         {userUpAddress ? (
           <LuksoProfile address={userUpAddress} />
         ) : (
           <p className="text-sm text-gray-500">Loading your profile...</p>
         )}
-        <p className="text-xs text-gray-600 italic">
-          You inherently have CHANGEPERMISSIONS rights on this profile.
-        </p>
       </div>
     </div>
   );
@@ -564,14 +442,14 @@ const getProfileImage = (profile: Profile) => {
 
 // ABI for LSP6 KeyManager setDataBatch function
 const setDataBatchAbi = [
-    {
-        type: 'function',
-        name: 'setDataBatch',
-        inputs: [
-            { name: 'dataKeys', type: 'bytes32[]' },
-            { name: 'dataValues', type: 'bytes[]' }
-        ],
-        outputs: [],
-        stateMutability: 'nonpayable',
-    }
+  {
+    type: 'function',
+    name: 'setDataBatch',
+    inputs: [
+      { name: 'dataKeys', type: 'bytes32[]' },
+      { name: 'dataValues', type: 'bytes[]' }
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  }
 ] as const;
