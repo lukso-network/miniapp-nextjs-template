@@ -18,15 +18,55 @@
  */
 "use client";
 
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import { useUpProvider } from "./upProvider";
 import { LuksoProfile } from "./LuksoProfile";
 import { ERC725 } from "@erc725/erc725.js";
 import LSP6Schema from "@erc725/erc725.js/schemas/LSP6KeyManager.json";
-import { encodeFunctionData, keccak256, toHex, isAddress } from "viem";
-import { request, gql } from "graphql-request";
-import makeBlockie from "ethereum-blockies-base64";
-import Image from "next/image";
+import { encodeFunctionData, isAddress } from "viem";
+import { request } from "graphql-request";
+import { Permissions } from "@erc725/erc725.js/build/main/src/types/Method";
+import { Profile, gqlQuery, IPFS_GATEWAY } from "./ProfileSearch";
+import { RoleCard } from './RoleCard';
+
+// --- Constants (Moved to top level) ---
+const RPC_ENDPOINT_TESTNET = "https://rpc.testnet.lukso.network";
+const RPC_ENDPOINT_MAINNET = "https://rpc.mainnet.lukso.network";
+const ENVIO_TESTNET_URL =
+  "https://envio.lukso-testnet.universal.tech/v1/graphql";
+const ENVIO_MAINNET_URL =
+  "https://envio.lukso-mainnet.universal.tech/v1/graphql";
+
+// Define Role type and the ordered list of roles
+// Export the Role type
+export type Role = "Treasury Manager" | "Token Manager" | "Data Manager";
+const ROLES: Role[] = ["Treasury Manager", "Token Manager", "Data Manager"];
+
+const ROLE_PERMISSIONS: Record<Role, Partial<Permissions>> = {
+  "Treasury Manager": { SUPER_TRANSFERVALUE: true },
+  "Token Manager": { CALL: true },
+  "Data Manager": { SETDATA: true },
+};
+
+const ROLE_ENCODED_PERMISSIONS: Record<Role, `0x${string}`> = {
+  "Data Manager": "0x0000000000000000000000000000000000000000000000000000000000040000",
+  "Token Manager": "0x0000000000000000000000000000000000000000000000000000000000000800",
+  "Treasury Manager": "0x0000000000000000000000000000000000000000000000000000000000000100",
+};
+
+// ABI for LSP6 KeyManager setDataBatch function
+const setDataBatchAbi = [
+  {
+    type: 'function',
+    name: 'setDataBatch',
+    inputs: [
+      { name: 'dataKeys', type: 'bytes32[]' },
+      { name: 'dataValues', type: 'bytes[]' }
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  }
+] as const;
 
 
 export function PermissionManager() {
@@ -34,10 +74,8 @@ export function PermissionManager() {
     useUpProvider();
   const userUpAddress = contextAccounts?.[0];
 
-  // State for each role
-  const [selectedAddresses, setSelectedAddresses] = useState<
-    Record<Role, `0x${string}` | null>
-  >({
+  // Restore correct state initializations
+  const [selectedAddresses, setSelectedAddresses] = useState<Record<Role, `0x${string}` | null>>({
     "Treasury Manager": null,
     "Token Manager": null,
     "Data Manager": null,
@@ -52,32 +90,92 @@ export function PermissionManager() {
     "Token Manager": [],
     "Data Manager": [],
   });
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
-    {}
-  ); // e.g., loadingStates['search-Treasury Manager'] = true
-  const [showSearchDropdown, setShowSearchDropdown] = useState<
-    Record<Role, boolean>
-  >({
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({}); // Keep empty object initialization
+  const [showSearchDropdown, setShowSearchDropdown] = useState<Record<Role, boolean>>({
     "Treasury Manager": false,
     "Token Manager": false,
     "Data Manager": false,
   });
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const erc725Instance = useMemo(() => {
     if (!userUpAddress || !chainId) return null;
     const rpcEndpoint =
       chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-    // Use LSP6 schema for permission encoding
     return new ERC725(LSP6Schema, userUpAddress, rpcEndpoint, {
       ipfsGateway: IPFS_GATEWAY,
     });
   }, [userUpAddress, chainId]);
 
+  // --- Effect to load existing controllers on mount ---
+  useEffect(() => {
+    if (!erc725Instance || !userUpAddress) {
+      setIsInitialLoading(false);
+      return;
+    }
+
+    async function fetchExistingControllers() {
+      setIsInitialLoading(true);
+      try {
+        const addressPermissionsArrayData = await erc725Instance!.getData(
+          "AddressPermissions[]"
+        );
+        const controllerAddresses = (
+          Array.isArray(addressPermissionsArrayData?.value)
+            ? addressPermissionsArrayData.value
+            : []
+        ) as `0x${string}`[];
+
+        if (!controllerAddresses || controllerAddresses.length === 0) {
+          console.log("No existing controllers found.");
+          setIsInitialLoading(false);
+          return;
+        }
+
+        const updates: Partial<Record<Role, `0x${string}`>> = {};
+        for (const address of controllerAddresses) {
+          if (!address || !isAddress(address)) continue;
+
+          try {
+            const permissionsData = await erc725Instance!.getData({
+              keyName: "AddressPermissions:Permissions:<address>",
+              dynamicKeyParts: address,
+            });
+            const permissionsValue = permissionsData?.value as `0x${string}` | null;
+
+            if (permissionsValue && permissionsValue !== '0x') {
+              for (const role of ROLES) {
+                const targetEncodedPerm = ROLE_ENCODED_PERMISSIONS[role];
+                if (permissionsValue.toLowerCase() === targetEncodedPerm.toLowerCase()) {
+                  updates[role] = address;
+                  break;
+                }
+              }
+            }
+          } catch (permError) {
+            console.warn(`Could not fetch permissions for ${address}:`, permError);
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          setSelectedAddresses(prev => ({ ...prev, ...updates }));
+        }
+
+      } catch (error) {
+        console.error("Error fetching existing controllers:", error);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    }
+
+    fetchExistingControllers();
+  }, [erc725Instance, userUpAddress]);
+
   // --- Search Logic ---
   const handleSearch = useCallback(
     async (role: Role, query: string) => {
       setSearchQueries((prev) => ({ ...prev, [role]: query }));
-      setShowSearchDropdown((prev) => ({ ...prev, [role]: true })); // Show dropdown on input
+      setShowSearchDropdown((prev) => ({ ...prev, [role]: true }));
 
       if (query.length < 3) {
         setSearchResults((prev) => ({ ...prev, [role]: [] }));
@@ -88,7 +186,7 @@ export function PermissionManager() {
       try {
         const envioUrl = chainId === 42 ? ENVIO_MAINNET_URL : ENVIO_TESTNET_URL;
         const result = (await request(envioUrl, gqlQuery, {
-          search: query,
+          id: query,
         })) as { search_profiles: Profile[] };
         setSearchResults((prev) => ({
           ...prev,
@@ -105,10 +203,10 @@ export function PermissionManager() {
   );
 
   const handleSelectProfile = useCallback((role: Role, profile: Profile) => {
-    setSelectedAddresses((prev) => ({ ...prev, [role]: profile.id }));
+    setSelectedAddresses((prev) => ({ ...prev, [role]: profile.id as `0x${string}` }));
     setShowSearchDropdown((prev) => ({ ...prev, [role]: false }));
-    setSearchQueries((prev) => ({ ...prev, [role]: "" })); // Clear search query
-    setSearchResults((prev) => ({ ...prev, [role]: [] })); // Clear results
+    setSearchQueries((prev) => ({ ...prev, [role]: "" }));
+    setSearchResults((prev) => ({ ...prev, [role]: [] }));
   }, []);
 
   const clearSelection = (role: Role) => {
@@ -128,13 +226,11 @@ export function PermissionManager() {
         !erc725Instance
       ) {
         console.error("Prerequisites not met for granting permission.");
-        // Add user feedback here (e.g., toast notification)
         return;
       }
       // Address format check
       if (!isAddress(userUpAddress) || !isAddress(controllerAddress)) {
         console.error("Invalid address format detected.");
-        // Add user feedback here
         return;
       }
 
@@ -146,13 +242,17 @@ export function PermissionManager() {
         );
         const currentControllers = (
           Array.isArray(addressPermissionsArrayData?.value) ? addressPermissionsArrayData.value : []
-        ) as string[];
+        ) as `0x${string}`[]; // Ensure type safety
+
+        console.log("Current controllers:", currentControllers);
 
         // 2. Check if the controller already exists
         const lowerCaseControllerAddress = controllerAddress.toLowerCase();
         const isExistingController = currentControllers.some(
           (addr) => addr && typeof addr === 'string' && addr.toLowerCase() === lowerCaseControllerAddress
         );
+
+        console.log("Is existing controller:", isExistingController);
 
         // 3. Determine new/merged permissions
         const newPermissions = ROLE_PERMISSIONS[role];
@@ -171,50 +271,63 @@ export function PermissionManager() {
               const decodedExisting = erc725Instance.decodePermissions(existingPermissionsValue);
               // Merge: New permissions overwrite/add to existing ones
               finalPermissions = { ...decodedExisting, ...newPermissions };
+              console.log("Merged permissions:", finalPermissions);
+            } else {
+              console.log("Existing controller found, but no permissions set or invalid data. Applying new permissions.");
             }
           } catch (err) {
             console.warn(`Could not fetch/decode existing permissions for ${controllerAddress}, proceeding with new permissions. Error:`, err);
+            // Fallback to just new permissions if fetching/decoding fails
+            finalPermissions = { ...newPermissions };
           }
+        } else {
+          console.log("New controller detected. Applying new permissions.");
         }
 
         // 4. Encode final permissions
         const encodedFinalPermissions = erc725Instance.encodePermissions(finalPermissions);
+        console.log("Encoded final permissions:", encodedFinalPermissions);
 
-        // 5. Prepare data payload for setDataBatch
-        const keysToSet: `0x${string}`[] = [];
-        const valuesToSet: `0x${string}`[] = [];
+        // 5. Prepare data payload(s) using encodeData
+        let keysToSet: `0x${string}`[] = [];
+        let valuesToSet: `0x${string}`[] = [];
 
-        // Always set/update the specific controller's permissions
-        // Construct the permission key manually
-        const permissionKey = keccak256(toHex(`AddressPermissions:Permissions:${controllerAddress.substring(2)}`));
-        keysToSet.push(permissionKey as `0x${string}`);
-        valuesToSet.push(encodedFinalPermissions as `0x${string}`);
+        // Always encode the data for the specific controller's permissions
+        const permissionData = erc725Instance.encodeData([
+          {
+            keyName: "AddressPermissions:Permissions:<address>",
+            dynamicKeyParts: controllerAddress,
+            value: encodedFinalPermissions,
+          },
+        ]);
+        // Assert the types returned by encodeData
+        keysToSet.push(...(permissionData.keys as `0x${string}`[]));
+        valuesToSet.push(...(permissionData.values as `0x${string}`[]));
 
-        // If it's a new controller, also update the AddressPermissions[] array
+        // If it's a new controller, also encode the update for the AddressPermissions[] array
         if (!isExistingController) {
-          // Construct the array key manually (hashed 'AddressPermissions[]')
-          const arrayKey = keccak256(toHex("AddressPermissions[]")) as `0x${string}`;
-          // Create the new array including the added controller
           const updatedControllersArray = [...currentControllers, controllerAddress];
-          // Encode this entire updated array into bytes
-          const encodedUpdatedArray = erc725Instance.encodeData([
+          const arrayUpdateData = erc725Instance.encodeData([
             {
               keyName: "AddressPermissions[]",
               value: updatedControllersArray
             }
-          ]).values[0];
-
-          // Add the array key and the encoded array value to the batch
-          keysToSet.push(arrayKey);
-          valuesToSet.push(encodedUpdatedArray as `0x${string}`);
+          ]);
+          // Assert the types returned by encodeData
+          keysToSet.push(...(arrayUpdateData.keys as `0x${string}`[]));
+          valuesToSet.push(...(arrayUpdateData.values as `0x${string}`[]));
         }
 
-        // 6. Encode the setDataBatch function call
+        console.log("Final Keys to set:", keysToSet);
+        console.log("Final Values to set:", valuesToSet);
+
+        // 6. Encode the setDataBatch function call using the prepared keys and values
         const setDataBatchPayload = encodeFunctionData({
           abi: setDataBatchAbi,
           functionName: "setDataBatch",
           args: [keysToSet, valuesToSet],
         });
+        console.log("setDataBatchPayload:", setDataBatchPayload);
 
         if (!setDataBatchPayload) {
           throw new Error("Failed to encode setDataBatch payload");
@@ -231,14 +344,9 @@ export function PermissionManager() {
         console.log(
           `Transaction sent to ${isExistingController ? 'update' : 'add'} controller ${controllerAddress} with role ${role}: ${txHash}`
         );
-        // Consider adding success feedback (toast)
-        // Consider clearing selection or refreshing data after success
-        // await waitForTransactionReceipt(client, { hash: txHash });
-        // clearSelection(role);
 
       } catch (err) {
         console.error(`Failed to grant permission for ${role}:`, err);
-        // Add more specific user error feedback (toast)
       } finally {
         setLoadingStates((prev) => ({ ...prev, [`add-${role}`]: false }));
       }
@@ -260,95 +368,39 @@ export function PermissionManager() {
         Assign roles to other profiles to manage this Universal Profile <lukso-username address={userUpAddress}></lukso-username>
       </p>
 
-      {!walletConnected && (
+      {isInitialLoading && (
+        <div className="text-center text-gray-500 font-semibold py-4">
+          Loading existing permissions...
+        </div>
+      )}
+
+      {!walletConnected && !isInitialLoading && (
         <div className="text-center text-red-500 font-semibold">
           Please connect your Universal Profile wallet.
         </div>
       )}
 
-      {/* Flex container for the roles */}
-      <div className="flex flex-wrap justify-around gap-2 mb-12">
-        {ROLES.map((role) => (
-          <div
-            key={role}
-            className="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3 min-w-[250px] max-w-sm flex-1"
-          >
-            <h2 className="text-lg font-semibold text-gray-700 text-center">{role}</h2>
-
-            {selectedAddresses[role] ? (
-            // Show selected profile and Add/Clear buttons
-              <div className="space-y-3 flex flex-col items-center">
-                <LuksoProfile address={selectedAddresses[role] as string} />
-                <div className="flex gap-2 justify-center">
-                  <lukso-button
-                    variant="secondary"
-                    size="small"
-                    onClick={() => clearSelection(role)}
-                    disabled={loadingStates[`add-${role}`]}
-                  >
-                    Clear
-                  </lukso-button>
-                  <lukso-button
-                    variant="primary"
-                    size="small"
-                    onClick={() => grantPermission(role)}
-                    isLoading={loadingStates[`add-${role}`]}
-                    disabled={!walletConnected || loadingStates[`add-${role}`]}
-                  >
-                    Add {role}
-                  </lukso-button>
-                </div>
-              </div>
-            ) : (
-              // Show search input and results
-              <div className="relative space-y-2">
-                <lukso-input
-                    placeholder={`Search for ${role}`}
-                    value={searchQueries[role]}
-                    onInput={(e: any) => handleSearch(role, e.target.value)} // Type assertion needed for custom event
-                    is-full-width
-                    is-disabled={!walletConnected || !!loadingStates[`search-${role}`]}
-                  />
-                  {loadingStates[`search-${role}`] && (
-                    <p className="text-xs text-gray-500">Searching...</p>
-                  )}
-
-                {showSearchDropdown[role] && searchResults[role].length > 0 && (
-                  <div className="absolute bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-full max-h-[180px] overflow-y-auto mt-1">
-                    {searchResults[role].map((profile) => (
-                      <button
-                        key={profile.id}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors"
-                        onClick={() => handleSelectProfile(role, profile)}
-                      >
-                        {getProfileImage(profile)}
-                        <div className="flex-1 min-w-0">
-                          <span className="block font-medium text-sm text-gray-800 truncate">
-                            {profile.fullName ||
-                              profile.name ||
-                              "Unnamed Profile"}
-                          </span>
-                          <span className="block text-xs text-gray-500 truncate">
-                            {profile.id}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {showSearchDropdown[role] &&
-                  searchResults[role].length === 0 &&
-                  searchQueries[role].length >= 3 &&
-                  !loadingStates[`search-${role}`] && (
-                    <p className="text-xs text-gray-500 pl-1 pt-1">
-                      No profiles found.
-                    </p>
-                  )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      {!isInitialLoading && (
+        <div className="flex flex-wrap justify-around gap-2 mb-12">
+          {ROLES.map((role) => (
+            <RoleCard
+              key={role}
+              role={role}
+              selectedAddress={selectedAddresses[role]}
+              searchQuery={searchQueries[role]}
+              searchResults={searchResults[role]}
+              isLoadingSearch={!!loadingStates[`search-${role}`]}
+              isLoadingGrant={!!loadingStates[`add-${role}`]}
+              showSearchDropdown={showSearchDropdown[role]}
+              walletConnected={walletConnected}
+              onClearSelection={() => clearSelection(role)}
+              onGrantPermission={() => grantPermission(role)}
+              onSearch={(query) => handleSearch(role, query)}
+              onSelectProfile={(profile) => handleSelectProfile(role, profile)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Display Permission Manager (User's own UP) */}
       <div className="bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
@@ -364,92 +416,3 @@ export function PermissionManager() {
     </div>
   );
 }
-
-// Constants
-const IPFS_GATEWAY = "https://api.universalprofile.cloud/ipfs/";
-const RPC_ENDPOINT_TESTNET = "https://rpc.testnet.lukso.network";
-const RPC_ENDPOINT_MAINNET = "https://rpc.mainnet.lukso.network";
-const ENVIO_TESTNET_URL =
-  "https://envio.lukso-testnet.universal.tech/v1/graphql";
-const ENVIO_MAINNET_URL =
-  "https://envio.lukso-mainnet.universal.tech/v1/graphql";
-
-// Define Roles and their corresponding LSP6 permissions
-type Role = "Treasury Manager" | "Token Manager" | "Data Manager";
-const ROLES: Role[] = ["Treasury Manager", "Token Manager", "Data Manager"];
-const ROLE_PERMISSIONS: Record<Role, Record<string, boolean>> = {
-  "Treasury Manager": { SUPER_TRANSFERVALUE: true },
-  "Token Manager": { CALL: true },
-  "Data Manager": { SETDATA: true },
-};
-
-// GraphQL query for profile search (similar to ProfileSearch.tsx)
-const gqlQuery = gql`
-  query SearchProfiles($search: String!) {
-    search_profiles(args: { search: $search }) {
-      id
-      name
-      fullName
-      profileImages(
-        where: { error: { _is_null: true } }
-        order_by: { width: asc }
-        limit: 1
-      ) {
-        url
-      }
-    }
-  }
-`;
-
-// Profile type definition
-type Profile = {
-  id: `0x${string}`;
-  name?: string;
-  fullName?: string;
-  profileImages?: { url: string }[];
-};
-
-// Helper function to get profile image (adapted from ProfileSearch)
-const getProfileImage = (profile: Profile) => {
-  const imageUrl = profile.profileImages?.[0]?.url?.replace(
-    "ipfs://",
-    IPFS_GATEWAY
-  );
-  if (imageUrl) {
-    return (
-      <Image
-        src={imageUrl}
-        alt={`${profile.name || profile.id} avatar`}
-        className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
-        width={40}
-        height={40}
-        onError={(e) => {
-          e.currentTarget.src = makeBlockie(profile.id);
-        }}
-      />
-    );
-  }
-  return (
-    <Image
-      src={makeBlockie(profile.id)}
-      alt={`${profile.name || profile.id} avatar`}
-      className="w-10 h-10 rounded-full flex-shrink-0"
-      width={40}
-      height={40}
-    />
-  );
-};
-
-// ABI for LSP6 KeyManager setDataBatch function
-const setDataBatchAbi = [
-  {
-    type: 'function',
-    name: 'setDataBatch',
-    inputs: [
-      { name: 'dataKeys', type: 'bytes32[]' },
-      { name: 'dataValues', type: 'bytes[]' }
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  }
-] as const;

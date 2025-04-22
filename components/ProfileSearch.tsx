@@ -22,10 +22,13 @@ import makeBlockie from 'ethereum-blockies-base64';
 import { useUpProvider } from './upProvider';
 import Image from 'next/image';
 
+// Export IPFS_GATEWAY
+export const IPFS_GATEWAY = "https://api.universalprofile.cloud/ipfs/";
 const ENVIO_TESTNET_URL = 'https://envio.lukso-testnet.universal.tech/v1/graphql';
 const ENVIO_MAINNET_URL = 'https://envio.lukso-mainnet.universal.tech/v1/graphql';
 
-const gqlQuery = gql`
+// Export gqlQuery
+export const gqlQuery = gql`
   query MyQuery($id: String!) {
     search_profiles(args: { search: $id }) {
       name
@@ -44,7 +47,8 @@ const gqlQuery = gql`
   }
 `;
 
-type Profile = {
+// Export Profile type
+export type Profile = {
   name?: string;
   id: string;
   fullName?: string;
