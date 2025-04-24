@@ -12,6 +12,7 @@ import type { Role } from './PermissionManager'; // Import Role type
 export interface RoleCardProps { // Export interface if needed elsewhere, otherwise keep local
     role: Role;
     selectedAddress: `0x${string}` | null;
+    isAssignedManager: boolean;
     searchQuery: string;
     searchResults: Profile[];
     isLoadingSearch: boolean;
@@ -22,11 +23,13 @@ export interface RoleCardProps { // Export interface if needed elsewhere, otherw
     onGrantPermission: () => void;
     onSearch: (query: string) => void;
     onSelectProfile: (profile: Profile) => void;
+    onRemoveManager: (role: Role, address: `0x${string}`) => void;
 }
 
 export function RoleCard({
     role,
     selectedAddress,
+    isAssignedManager,
     searchQuery,
     searchResults,
     isLoadingSearch,
@@ -36,7 +39,8 @@ export function RoleCard({
     onClearSelection,
     onGrantPermission,
     onSearch,
-    onSelectProfile
+    onSelectProfile,
+    onRemoveManager
 }: RoleCardProps) {
     return (
         <div
@@ -49,24 +53,39 @@ export function RoleCard({
                 // Show selected profile and actions
                 <div className="space-y-3 flex flex-col items-center">
                     <LuksoProfile address={selectedAddress} />
-                    <div className="flex gap-2 justify-center mt-2">
-                        <lukso-button
-                            variant="secondary"
-                            size="small"
-                            onClick={onClearSelection}
-                            disabled={isLoadingGrant}
-                        >
-                            Clear
-                        </lukso-button>
-                        <lukso-button
-                            variant="primary"
-                            size="small"
-                            onClick={onGrantPermission}
-                            isLoading={isLoadingGrant}
-                            disabled={!walletConnected || isLoadingGrant}
-                        >
-                            Grant {role}
-                        </lukso-button>
+                    <div className="flex gap-2 flex-wrap justify-center mt-2">
+                        {isAssignedManager ? (
+                            // If manager is already assigned, only show Remove
+                            <lukso-button
+                                variant="danger"
+                                size="small"
+                                onClick={() => onRemoveManager(role, selectedAddress)}
+                                disabled={isLoadingGrant} // Maybe disable if a removal tx is pending?
+                            >
+                                Remove {role}
+                            </lukso-button>
+                        ) : (
+                            // If selected from search, show Clear and Grant
+                            <>
+                                <lukso-button
+                                    variant="secondary"
+                                    size="small"
+                                    onClick={onClearSelection}
+                                    disabled={isLoadingGrant}
+                                >
+                                    Clear
+                                </lukso-button>
+                                <lukso-button
+                                    variant="primary"
+                                    size="small"
+                                    onClick={onGrantPermission}
+                                    isLoading={isLoadingGrant}
+                                    disabled={!walletConnected || isLoadingGrant}
+                                >
+                                    Grant {role}
+                                </lukso-button>
+                            </>
+                        )}
                     </div>
                 </div>
             ) : (

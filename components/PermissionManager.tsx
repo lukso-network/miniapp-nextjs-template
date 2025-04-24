@@ -72,10 +72,21 @@ const setDataBatchAbi = [
 export function PermissionManager() {
   const { client, accounts, contextAccounts, chainId, walletConnected } =
     useUpProvider();
-  const userUpAddress = contextAccounts?.[0];
+  const managedUpAddress = contextAccounts?.[0]; // Renamed for clarity
+  const visitorAddress = accounts?.[0]; // Get the visitor's address
+  console.log("PermissionManager: Visitor Address:", visitorAddress); // Log visitor address
+  console.log("PermissionManager: Managed UP Address:", managedUpAddress); // Log managed UP address
+
+  const [currentUserRole, setCurrentUserRole] = useState<Role | null>(null); // State for current user's role
 
   // Restore correct state initializations
   const [selectedAddresses, setSelectedAddresses] = useState<Record<Role, `0x${string}` | null>>({
+    "Treasury Manager": null,
+    "Token Manager": null,
+    "Data Manager": null,
+  });
+  // Add state to track definitively assigned managers
+  const [assignedManagers, setAssignedManagers] = useState<Record<Role, `0x${string}` | null>>({
     "Treasury Manager": null,
     "Token Manager": null,
     "Data Manager": null,
@@ -99,24 +110,41 @@ export function PermissionManager() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const erc725Instance = useMemo(() => {
-    if (!userUpAddress || !chainId) return null;
+    // Use the managed UP address to fetch its data
+    if (!managedUpAddress || !chainId) return null;
     const rpcEndpoint =
       chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-    return new ERC725(LSP6Schema, userUpAddress, rpcEndpoint, {
+    return new ERC725(LSP6Schema, managedUpAddress, rpcEndpoint, {
       ipfsGateway: IPFS_GATEWAY,
     });
-  }, [userUpAddress, chainId]);
+  }, [managedUpAddress, chainId]); // Depend on managedUpAddress
 
   // --- Effect to load existing controllers on mount ---
   useEffect(() => {
-    if (!erc725Instance || !userUpAddress) {
-      setIsInitialLoading(false);
-      return;
+    // Check if we have the instance (based on managedUpAddress) and the visitor's address
+    if (!erc725Instance || !visitorAddress) {
+        // We might not have the visitor address immediately, handle this case
+        // Or, if no instance, we can't fetch.
+        // We could set loading to false if visitorAddress is null after connection?
+        // For now, just prevent fetching if either is missing.
+        // Consider adding specific loading/state handling for missing visitor address.
+        setIsInitialLoading(false); // Potentially set loading done if no visitorAddress is expected
+        setCurrentUserRole(null); // Ensure role is null if no visitor
+        console.log("useEffect: Missing erc725Instance or visitorAddress, skipping fetch.", { hasInstance: !!erc725Instance, hasVisitor: !!visitorAddress });
+        return;
     }
+
 
     async function fetchExistingControllers() {
       setIsInitialLoading(true);
+      setCurrentUserRole(null); // Reset role before fetching
+      setAssignedManagers({ // Reset assigned managers before fetch
+        "Treasury Manager": null,
+        "Token Manager": null,
+        "Data Manager": null,
+      });
       try {
+        console.log("fetchExistingControllers: Fetching permissions for Managed UP:", erc725Instance?.options?.address);
         const addressPermissionsArrayData = await erc725Instance!.getData(
           "AddressPermissions[]"
         );
@@ -125,6 +153,7 @@ export function PermissionManager() {
             ? addressPermissionsArrayData.value
             : []
         ) as `0x${string}`[];
+        console.log("fetchExistingControllers: Found controllers:", controllerAddresses);
 
         if (!controllerAddresses || controllerAddresses.length === 0) {
           console.log("No existing controllers found.");
@@ -133,22 +162,35 @@ export function PermissionManager() {
         }
 
         const updates: Partial<Record<Role, `0x${string}`>> = {};
+        let loggedInUserRole: Role | null = null; // Role of the VISITOR
+
         for (const address of controllerAddresses) {
           if (!address || !isAddress(address)) continue;
 
           try {
+            console.log(`fetchExistingControllers: Checking controller address: ${address}`);
             const permissionsData = await erc725Instance!.getData({
               keyName: "AddressPermissions:Permissions:<address>",
               dynamicKeyParts: address,
             });
             const permissionsValue = permissionsData?.value as `0x${string}` | null;
+            console.log(`fetchExistingControllers: Permissions for ${address}:`, permissionsValue);
 
             if (permissionsValue && permissionsValue !== '0x') {
               for (const role of ROLES) {
                 const targetEncodedPerm = ROLE_ENCODED_PERMISSIONS[role];
-                if (permissionsValue.toLowerCase() === targetEncodedPerm.toLowerCase()) {
-                  updates[role] = address;
-                  break;
+                const isMatch = permissionsValue.toLowerCase() === targetEncodedPerm.toLowerCase();
+                console.log(`fetchExistingControllers: Comparing ${permissionsValue} with ${role} (${targetEncodedPerm}): Match = ${isMatch}`);
+
+                if (isMatch) {
+                  updates[role] = address; // Still useful for the owner view
+                  // Check if the current controller address matches the VISITOR's address
+                  const isCurrentUser = visitorAddress && address.toLowerCase() === visitorAddress.toLowerCase();
+                  console.log(`fetchExistingControllers: Controller ${address} matches role ${role}. Is it the current visitor (${visitorAddress})? ${isCurrentUser}`);
+                  if (isCurrentUser) {
+                    loggedInUserRole = role; // Found the visitor's role!
+                  }
+                  // Don't break here, allow checking other roles if permissions overlap (though unlikely with current setup)
                 }
               }
             }
@@ -157,19 +199,25 @@ export function PermissionManager() {
           }
         }
 
+        // Update the selected addresses state (for the owner view)
         if (Object.keys(updates).length > 0) {
           setSelectedAddresses(prev => ({ ...prev, ...updates }));
+          setAssignedManagers(prev => ({ ...prev, ...updates })); // Store the fetched assignments
         }
+        // Set the current VISITOR's role state
+        setCurrentUserRole(loggedInUserRole);
+        console.log("fetchExistingControllers: Setting currentUserRole (visitor's role):", loggedInUserRole);
 
       } catch (error) {
         console.error("Error fetching existing controllers:", error);
+        setCurrentUserRole(null); // Reset role on error
       } finally {
         setIsInitialLoading(false);
       }
     }
 
     fetchExistingControllers();
-  }, [erc725Instance, userUpAddress]);
+  }, [erc725Instance, visitorAddress]); // Depend on the instance AND the visitor's address
 
   // --- Search Logic ---
   const handleSearch = useCallback(
@@ -221,7 +269,7 @@ export function PermissionManager() {
       if (
         !client ||
         !walletConnected ||
-        !userUpAddress ||
+        !managedUpAddress ||
         !controllerAddress ||
         !erc725Instance
       ) {
@@ -229,7 +277,7 @@ export function PermissionManager() {
         return;
       }
       // Address format check
-      if (!isAddress(userUpAddress) || !isAddress(controllerAddress)) {
+      if (!isAddress(managedUpAddress) || !isAddress(controllerAddress)) {
         console.error("Invalid address format detected.");
         return;
       }
@@ -336,7 +384,7 @@ export function PermissionManager() {
         // 7. Send the transaction
         const txHash = await client.sendTransaction({
           account: accounts[0] as `0x${string}`, // UP owner EOA
-          to: userUpAddress, // Target UP address
+          to: managedUpAddress, // Target UP address
           data: setDataBatchPayload,
           chain: client.chain,
         });
@@ -355,64 +403,159 @@ export function PermissionManager() {
       selectedAddresses,
       client,
       walletConnected,
-      userUpAddress,
+      managedUpAddress,
       erc725Instance,
       accounts,
     ]
   );
 
+  // Handler for the new button
+  const handleUpdateProfileClick = () => {
+    console.log("Update Profile button clicked by Data Manager:", visitorAddress);
+  };
+
+  // Placeholder handlers for other roles
+  const handleSendLyxClick = () => {
+    console.log("Send LYX button clicked by Treasury Manager:", visitorAddress);
+  };
+
+  const handleCreateTokenClick = () => {
+    console.log("Create Token/NFT button clicked by Token Manager:", visitorAddress);
+  };
+
+  // Handler to remove a manager (for Permission Manager view)
+  const handleRemoveManager = (role: Role, address: `0x${string}`) => {
+    console.log(`Remove Manager button clicked for role: ${role}, address: ${address}`);
+    // TODO: Implement actual removal logic later
+  };
+
   // --- UI Rendering ---
+  console.log("Rendering with currentUserRole (visitor's role):", currentUserRole); // Log role before render
   return (
     <div className="w-full max-h-[900px] overflow-y-auto bg-white/80 backdrop-blur-md rounded-2xl p-6 space-y-6">
-      <p className="text-md text-center text-gray-600 mb-6">
-        Assign roles to other profiles to manage this Universal Profile <lukso-username address={userUpAddress}></lukso-username>
-      </p>
-
-      {isInitialLoading && (
-        <div className="text-center text-gray-500 font-semibold py-4">
-          Loading existing permissions...
+      {/* Conditionally render based on visitor's role */}
+      {currentUserRole === 'Data Manager' ? (
+        // View for Data Manager
+        <div className="text-center space-y-4">
+          <h1 className="text-xl font-semibold">Data Manager Dashboard</h1>
+          <p>You are managing the profile below as a Data Manager.</p>
+          <lukso-button variant="primary" onClick={handleUpdateProfileClick}>
+            Update Profile Data
+          </lukso-button>
+          {/* Show managed profile */}
+          <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-lime-700 text-center">
+              Profile Being Managed
+            </h2>
+            {managedUpAddress ? (
+              <LuksoProfile address={managedUpAddress} />
+            ) : (
+              <p className="text-sm text-gray-500">Loading managed profile...</p>
+            )}
+          </div>
         </div>
-      )}
+      ) : currentUserRole === 'Token Manager' ? (
+         <div className="text-center space-y-4">
+             <h1 className="text-xl font-semibold">Token Manager Dashboard</h1>
+             <p>You are managing the profile below as a Token Manager.</p>
+             <lukso-button variant="primary" onClick={handleCreateTokenClick}>
+                Create Token/NFT
+             </lukso-button>
+            {/* Show managed profile */}
+            <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-lime-700 text-center">
+                Profile Being Managed
+                </h2>
+                {managedUpAddress ? (
+                <LuksoProfile address={managedUpAddress} />
+                ) : (
+                <p className="text-sm text-gray-500">Loading managed profile...</p>
+                )}
+            </div>
+         </div>
+      ) : currentUserRole === 'Treasury Manager' ? (
+         <div className="text-center space-y-4">
+             <h1 className="text-xl font-semibold">Treasury Manager Dashboard</h1>
+             <p>You are managing the profile below as a Treasury Manager.</p>
+             <lukso-button variant="primary" onClick={handleSendLyxClick}>
+                Send LYX
+             </lukso-button>
+             {/* Show managed profile */}
+            <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-lime-700 text-center">
+                Profile Being Managed
+                </h2>
+                {managedUpAddress ? (
+                <LuksoProfile address={managedUpAddress} />
+                ) : (
+                <p className="text-sm text-gray-500">Loading managed profile...</p>
+                )}
+            </div>
+         </div>
+      ) : (
+        // Original view for Permission Manager (owner) or users with no specific role
+        // Note: The owner viewing their own profile might also see this if they haven't assigned themselves another role.
+        // We could add a check: if (visitorAddress === managedUpAddress) show owner view explicitly.
+        <>
+          <p className="text-md text-center text-gray-600 mb-6">
+            Assign roles to other profiles to manage this Universal Profile <lukso-username address={managedUpAddress}></lukso-username>
+          </p>
 
-      {!walletConnected && !isInitialLoading && (
-        <div className="text-center text-red-500 font-semibold">
-          Please connect your Universal Profile wallet.
-        </div>
-      )}
+          {isInitialLoading && (
+            <div className="text-center text-gray-500 font-semibold py-4">
+              Loading permissions...
+            </div>
+          )}
 
-      {!isInitialLoading && (
-        <div className="flex flex-wrap justify-around gap-2 mb-12">
-          {ROLES.map((role) => (
-            <RoleCard
-              key={role}
-              role={role}
-              selectedAddress={selectedAddresses[role]}
-              searchQuery={searchQueries[role]}
-              searchResults={searchResults[role]}
-              isLoadingSearch={!!loadingStates[`search-${role}`]}
-              isLoadingGrant={!!loadingStates[`add-${role}`]}
-              showSearchDropdown={showSearchDropdown[role]}
-              walletConnected={walletConnected}
-              onClearSelection={() => clearSelection(role)}
-              onGrantPermission={() => grantPermission(role)}
-              onSearch={(query) => handleSearch(role, query)}
-              onSelectProfile={(profile) => handleSelectProfile(role, profile)}
-            />
-          ))}
-        </div>
-      )}
+          {!walletConnected && !isInitialLoading && (
+            <div className="text-center text-red-500 font-semibold">
+              Please connect your Universal Profile wallet to assign roles or view your dashboard.
+            </div>
+          )}
 
-      {/* Display Permission Manager (User's own UP) */}
-      <div className="bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
-        <h2 className="text-lg font-semibold text-lime-700 text-center">
-          Permission Manager
-        </h2>
-        {userUpAddress ? (
-          <LuksoProfile address={userUpAddress} />
-        ) : (
-          <p className="text-sm text-gray-500">Loading your profile...</p>
-        )}
-      </div>
+          {/* Only show role cards if connected and not loading */}
+          {walletConnected && !isInitialLoading && (
+            <div className="flex flex-wrap justify-around gap-2 mb-12">
+              {ROLES.map((role) => {
+                const selectedAddress = selectedAddresses[role];
+                // Determine if the selected address is one that was loaded from the contract
+                const isAssigned = !!(assignedManagers[role] && selectedAddress === assignedManagers[role]);
+                return (
+                    <RoleCard
+                      key={role}
+                      role={role}
+                      selectedAddress={selectedAddress} // Pass the currently selected/assigned address
+                      isAssignedManager={isAssigned} // Pass the boolean flag
+                      searchQuery={searchQueries[role]}
+                      searchResults={searchResults[role]}
+                      isLoadingSearch={!!loadingStates[`search-${role}`]}
+                      isLoadingGrant={!!loadingStates[`add-${role}`]}
+                      showSearchDropdown={showSearchDropdown[role]}
+                      walletConnected={walletConnected} // Pass walletConnected status
+                      onClearSelection={() => clearSelection(role)}
+                      onGrantPermission={() => grantPermission(role)}
+                      onSearch={(query) => handleSearch(role, query)}
+                      onSelectProfile={(profile) => handleSelectProfile(role, profile)}
+                      onRemoveManager={handleRemoveManager}
+                    />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Display Owner/Managed Profile Info */}
+          <div className="bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-lime-700 text-center">
+              Profile Being Managed
+            </h2>
+            {managedUpAddress ? (
+              <LuksoProfile address={managedUpAddress} />
+            ) : (
+              <p className="text-sm text-gray-500">Loading managed profile...</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
