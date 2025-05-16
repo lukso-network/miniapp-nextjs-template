@@ -106,7 +106,7 @@ export function RoleCard({
                         <div className="absolute bg-white border border-gray-200 rounded-md shadow-lg z-10 w-full max-h-[180px] overflow-y-auto mt-1 text-sm">
                             {searchResults.map((profile) => {
                                 const profileImage = profile.profileImages?.[0];
-                                let imageUrl = profileImage?.url?.replace("ipfs://", IPFS_GATEWAY)
+                                const imageUrl = profileImage?.url?.replace("ipfs://", IPFS_GATEWAY)
                                     || profileImage?.src?.replace("ipfs://", IPFS_GATEWAY);
                                 return (
                                     <button

@@ -30,7 +30,7 @@ interface LuksoProfileProps {
 }
 
 export function LuksoProfile({ address }: LuksoProfileProps) {
-    const { setIsSearching, chainId } = useUpProvider();
+    const { chainId } = useUpProvider();
     const [profileData, setProfileData] = useState<{
         imgUrl: string;
         fullName: string;

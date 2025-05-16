@@ -23,11 +23,11 @@ import { useUpProvider } from "./upProvider";
 import { LuksoProfile } from "./LuksoProfile";
 import { ERC725 } from "@erc725/erc725.js";
 import LSP6Schema from "@erc725/erc725.js/schemas/LSP6KeyManager.json";
-import { encodeFunctionData, isAddress } from "viem";
+import { encodeFunctionData, isAddress, parseEther } from "viem";
 import { request } from "graphql-request";
 import { Permissions } from "@erc725/erc725.js/build/main/src/types/Method";
 import { Profile, gqlQuery, IPFS_GATEWAY } from "./ProfileSearch";
-import { RoleCard } from './RoleCard';
+import { RoleCard } from "./RoleCard";
 
 // --- Constants (Moved to top level) ---
 const RPC_ENDPOINT_TESTNET = "https://rpc.testnet.lukso.network";
@@ -37,37 +37,42 @@ const ENVIO_TESTNET_URL =
 const ENVIO_MAINNET_URL =
   "https://envio.lukso-mainnet.universal.tech/v1/graphql";
 
+// --- Mock Addresses for Payment Search ---
+const MOCK_PAYROLL_ADDRESS = "0x1234567890123456789012345678901234567890" as `0x${string}`;
+const MOCK_PROMOTIONS_ADDRESS = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd" as `0x${string}`;
+
 // Define Role type and the ordered list of roles
 // Export the Role type
-export type Role = "Treasury Manager" | "Token Manager" | "Data Manager";
-const ROLES: Role[] = ["Treasury Manager", "Token Manager", "Data Manager"];
+export type Role = "Payroll" | "Promotions" | "Branding";
+const ROLES: Role[] = ["Payroll", "Promotions", "Branding"];
 
 const ROLE_PERMISSIONS: Record<Role, Partial<Permissions>> = {
-  "Treasury Manager": { SUPER_TRANSFERVALUE: true },
-  "Token Manager": { CALL: true },
-  "Data Manager": { SETDATA: true },
+  Payroll: { SUPER_TRANSFERVALUE: true },
+  Promotions: { CALL: true },
+  Branding: { SETDATA: true },
 };
 
 const ROLE_ENCODED_PERMISSIONS: Record<Role, `0x${string}`> = {
-  "Data Manager": "0x0000000000000000000000000000000000000000000000000000000000040000",
-  "Token Manager": "0x0000000000000000000000000000000000000000000000000000000000000800",
-  "Treasury Manager": "0x0000000000000000000000000000000000000000000000000000000000000100",
+  Branding:
+    "0x0000000000000000000000000000000000000000000000000000000000040000",
+  Promotions:
+    "0x0000000000000000000000000000000000000000000000000000000000000800",
+  Payroll: "0x0000000000000000000000000000000000000000000000000000000000000100",
 };
 
 // ABI for LSP6 KeyManager setDataBatch function
 const setDataBatchAbi = [
   {
-    type: 'function',
-    name: 'setDataBatch',
+    type: "function",
+    name: "setDataBatch",
     inputs: [
-      { name: 'dataKeys', type: 'bytes32[]' },
-      { name: 'dataValues', type: 'bytes[]' }
+      { name: "dataKeys", type: "bytes32[]" },
+      { name: "dataValues", type: "bytes[]" },
     ],
     outputs: [],
-    stateMutability: 'nonpayable',
-  }
+    stateMutability: "nonpayable",
+  },
 ] as const;
-
 
 export function PermissionManager() {
   const { client, accounts, contextAccounts, chainId, walletConnected } =
@@ -78,34 +83,48 @@ export function PermissionManager() {
   console.log("PermissionManager: Managed UP Address:", managedUpAddress); // Log managed UP address
 
   const [currentUserRole, setCurrentUserRole] = useState<Role | null>(null); // State for current user's role
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // --- State for Payment Modal ---
+  const initialPayment = { id: Date.now(), address: "", amount: "" };
+  const [payments, setPayments] = useState([initialPayment]);
+  const [paymentConfirmationMessage, setPaymentConfirmationMessage] = useState("");
 
   // Restore correct state initializations
-  const [selectedAddresses, setSelectedAddresses] = useState<Record<Role, `0x${string}` | null>>({
-    "Treasury Manager": null,
-    "Token Manager": null,
-    "Data Manager": null,
+  const [selectedAddresses, setSelectedAddresses] = useState<
+    Record<Role, `0x${string}` | null>
+  >({
+    Payroll: null,
+    Promotions: null,
+    Branding: null,
   });
   // Add state to track definitively assigned managers
-  const [assignedManagers, setAssignedManagers] = useState<Record<Role, `0x${string}` | null>>({
-    "Treasury Manager": null,
-    "Token Manager": null,
-    "Data Manager": null,
+  const [assignedManagers, setAssignedManagers] = useState<
+    Record<Role, `0x${string}` | null>
+  >({
+    Payroll: null,
+    Promotions: null,
+    Branding: null,
   });
   const [searchQueries, setSearchQueries] = useState<Record<Role, string>>({
-    "Treasury Manager": "",
-    "Token Manager": "",
-    "Data Manager": "",
+    Payroll: "",
+    Promotions: "",
+    Branding: "",
   });
   const [searchResults, setSearchResults] = useState<Record<Role, Profile[]>>({
-    "Treasury Manager": [],
-    "Token Manager": [],
-    "Data Manager": [],
+    Payroll: [],
+    Promotions: [],
+    Branding: [],
   });
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({}); // Keep empty object initialization
-  const [showSearchDropdown, setShowSearchDropdown] = useState<Record<Role, boolean>>({
-    "Treasury Manager": false,
-    "Token Manager": false,
-    "Data Manager": false,
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {}
+  ); // Keep empty object initialization
+  const [showSearchDropdown, setShowSearchDropdown] = useState<
+    Record<Role, boolean>
+  >({
+    Payroll: false,
+    Promotions: false,
+    Branding: false,
   });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -123,28 +142,34 @@ export function PermissionManager() {
   useEffect(() => {
     // Check if we have the instance (based on managedUpAddress) and the visitor's address
     if (!erc725Instance || !visitorAddress) {
-        // We might not have the visitor address immediately, handle this case
-        // Or, if no instance, we can't fetch.
-        // We could set loading to false if visitorAddress is null after connection?
-        // For now, just prevent fetching if either is missing.
-        // Consider adding specific loading/state handling for missing visitor address.
-        setIsInitialLoading(false); // Potentially set loading done if no visitorAddress is expected
-        setCurrentUserRole(null); // Ensure role is null if no visitor
-        console.log("useEffect: Missing erc725Instance or visitorAddress, skipping fetch.", { hasInstance: !!erc725Instance, hasVisitor: !!visitorAddress });
-        return;
+      // We might not have the visitor address immediately, handle this case
+      // Or, if no instance, we can't fetch.
+      // We could set loading to false if visitorAddress is null after connection?
+      // For now, just prevent fetching if either is missing.
+      // Consider adding specific loading/state handling for missing visitor address.
+      setIsInitialLoading(false); // Potentially set loading done if no visitorAddress is expected
+      setCurrentUserRole(null); // Ensure role is null if no visitor
+      console.log(
+        "useEffect: Missing erc725Instance or visitorAddress, skipping fetch.",
+        { hasInstance: !!erc725Instance, hasVisitor: !!visitorAddress }
+      );
+      return;
     }
-
 
     async function fetchExistingControllers() {
       setIsInitialLoading(true);
       setCurrentUserRole(null); // Reset role before fetching
-      setAssignedManagers({ // Reset assigned managers before fetch
-        "Treasury Manager": null,
-        "Token Manager": null,
-        "Data Manager": null,
+      setAssignedManagers({
+        // Reset assigned managers before fetch
+        Payroll: null,
+        Promotions: null,
+        Branding: null,
       });
       try {
-        console.log("fetchExistingControllers: Fetching permissions for Managed UP:", erc725Instance?.options?.address);
+        console.log(
+          "fetchExistingControllers: Fetching permissions for Managed UP:",
+          erc725Instance?.options?.address
+        );
         const addressPermissionsArrayData = await erc725Instance!.getData(
           "AddressPermissions[]"
         );
@@ -153,7 +178,10 @@ export function PermissionManager() {
             ? addressPermissionsArrayData.value
             : []
         ) as `0x${string}`[];
-        console.log("fetchExistingControllers: Found controllers:", controllerAddresses);
+        console.log(
+          "fetchExistingControllers: Found controllers:",
+          controllerAddresses
+        );
 
         if (!controllerAddresses || controllerAddresses.length === 0) {
           console.log("No existing controllers found.");
@@ -168,25 +196,40 @@ export function PermissionManager() {
           if (!address || !isAddress(address)) continue;
 
           try {
-            console.log(`fetchExistingControllers: Checking controller address: ${address}`);
+            console.log(
+              `fetchExistingControllers: Checking controller address: ${address}`
+            );
             const permissionsData = await erc725Instance!.getData({
               keyName: "AddressPermissions:Permissions:<address>",
               dynamicKeyParts: address,
             });
-            const permissionsValue = permissionsData?.value as `0x${string}` | null;
-            console.log(`fetchExistingControllers: Permissions for ${address}:`, permissionsValue);
+            const permissionsValue = permissionsData?.value as
+              | `0x${string}`
+              | null;
+            console.log(
+              `fetchExistingControllers: Permissions for ${address}:`,
+              permissionsValue
+            );
 
-            if (permissionsValue && permissionsValue !== '0x') {
+            if (permissionsValue && permissionsValue !== "0x") {
               for (const role of ROLES) {
                 const targetEncodedPerm = ROLE_ENCODED_PERMISSIONS[role];
-                const isMatch = permissionsValue.toLowerCase() === targetEncodedPerm.toLowerCase();
-                console.log(`fetchExistingControllers: Comparing ${permissionsValue} with ${role} (${targetEncodedPerm}): Match = ${isMatch}`);
+                const isMatch =
+                  permissionsValue.toLowerCase() ===
+                  targetEncodedPerm.toLowerCase();
+                console.log(
+                  `fetchExistingControllers: Comparing ${permissionsValue} with ${role} (${targetEncodedPerm}): Match = ${isMatch}`
+                );
 
                 if (isMatch) {
                   updates[role] = address; // Still useful for the owner view
                   // Check if the current controller address matches the VISITOR's address
-                  const isCurrentUser = visitorAddress && address.toLowerCase() === visitorAddress.toLowerCase();
-                  console.log(`fetchExistingControllers: Controller ${address} matches role ${role}. Is it the current visitor (${visitorAddress})? ${isCurrentUser}`);
+                  const isCurrentUser =
+                    visitorAddress &&
+                    address.toLowerCase() === visitorAddress.toLowerCase();
+                  console.log(
+                    `fetchExistingControllers: Controller ${address} matches role ${role}. Is it the current visitor (${visitorAddress})? ${isCurrentUser}`
+                  );
                   if (isCurrentUser) {
                     loggedInUserRole = role; // Found the visitor's role!
                   }
@@ -195,19 +238,24 @@ export function PermissionManager() {
               }
             }
           } catch (permError) {
-            console.warn(`Could not fetch permissions for ${address}:`, permError);
+            console.warn(
+              `Could not fetch permissions for ${address}:`,
+              permError
+            );
           }
         }
 
         // Update the selected addresses state (for the owner view)
         if (Object.keys(updates).length > 0) {
-          setSelectedAddresses(prev => ({ ...prev, ...updates }));
-          setAssignedManagers(prev => ({ ...prev, ...updates })); // Store the fetched assignments
+          setSelectedAddresses((prev) => ({ ...prev, ...updates }));
+          setAssignedManagers((prev) => ({ ...prev, ...updates })); // Store the fetched assignments
         }
         // Set the current VISITOR's role state
         setCurrentUserRole(loggedInUserRole);
-        console.log("fetchExistingControllers: Setting currentUserRole (visitor's role):", loggedInUserRole);
-
+        console.log(
+          "fetchExistingControllers: Setting currentUserRole (visitor's role):",
+          loggedInUserRole
+        );
       } catch (error) {
         console.error("Error fetching existing controllers:", error);
         setCurrentUserRole(null); // Reset role on error
@@ -251,7 +299,10 @@ export function PermissionManager() {
   );
 
   const handleSelectProfile = useCallback((role: Role, profile: Profile) => {
-    setSelectedAddresses((prev) => ({ ...prev, [role]: profile.id as `0x${string}` }));
+    setSelectedAddresses((prev) => ({
+      ...prev,
+      [role]: profile.id as `0x${string}`,
+    }));
     setShowSearchDropdown((prev) => ({ ...prev, [role]: false }));
     setSearchQueries((prev) => ({ ...prev, [role]: "" }));
     setSearchResults((prev) => ({ ...prev, [role]: [] }));
@@ -289,7 +340,9 @@ export function PermissionManager() {
           "AddressPermissions[]"
         );
         const currentControllers = (
-          Array.isArray(addressPermissionsArrayData?.value) ? addressPermissionsArrayData.value : []
+          Array.isArray(addressPermissionsArrayData?.value)
+            ? addressPermissionsArrayData.value
+            : []
         ) as `0x${string}`[]; // Ensure type safety
 
         console.log("Current controllers:", currentControllers);
@@ -297,7 +350,10 @@ export function PermissionManager() {
         // 2. Check if the controller already exists
         const lowerCaseControllerAddress = controllerAddress.toLowerCase();
         const isExistingController = currentControllers.some(
-          (addr) => addr && typeof addr === 'string' && addr.toLowerCase() === lowerCaseControllerAddress
+          (addr) =>
+            addr &&
+            typeof addr === "string" &&
+            addr.toLowerCase() === lowerCaseControllerAddress
         );
 
         console.log("Is existing controller:", isExistingController);
@@ -313,18 +369,27 @@ export function PermissionManager() {
               keyName: "AddressPermissions:Permissions:<address>",
               dynamicKeyParts: controllerAddress,
             });
-            existingPermissionsValue = existingPermissionsData?.value as string | null;
+            existingPermissionsValue = existingPermissionsData?.value as
+              | string
+              | null;
 
-            if (existingPermissionsValue && existingPermissionsValue !== '0x') {
-              const decodedExisting = erc725Instance.decodePermissions(existingPermissionsValue);
+            if (existingPermissionsValue && existingPermissionsValue !== "0x") {
+              const decodedExisting = erc725Instance.decodePermissions(
+                existingPermissionsValue
+              );
               // Merge: New permissions overwrite/add to existing ones
               finalPermissions = { ...decodedExisting, ...newPermissions };
               console.log("Merged permissions:", finalPermissions);
             } else {
-              console.log("Existing controller found, but no permissions set or invalid data. Applying new permissions.");
+              console.log(
+                "Existing controller found, but no permissions set or invalid data. Applying new permissions."
+              );
             }
           } catch (err) {
-            console.warn(`Could not fetch/decode existing permissions for ${controllerAddress}, proceeding with new permissions. Error:`, err);
+            console.warn(
+              `Could not fetch/decode existing permissions for ${controllerAddress}, proceeding with new permissions. Error:`,
+              err
+            );
             // Fallback to just new permissions if fetching/decoding fails
             finalPermissions = { ...newPermissions };
           }
@@ -333,12 +398,13 @@ export function PermissionManager() {
         }
 
         // 4. Encode final permissions
-        const encodedFinalPermissions = erc725Instance.encodePermissions(finalPermissions);
+        const encodedFinalPermissions =
+          erc725Instance.encodePermissions(finalPermissions);
         console.log("Encoded final permissions:", encodedFinalPermissions);
 
         // 5. Prepare data payload(s) using encodeData
-        let keysToSet: `0x${string}`[] = [];
-        let valuesToSet: `0x${string}`[] = [];
+        const keysToSet: `0x${string}`[] = [];
+        const valuesToSet: `0x${string}`[] = [];
 
         // Always encode the data for the specific controller's permissions
         const permissionData = erc725Instance.encodeData([
@@ -354,12 +420,15 @@ export function PermissionManager() {
 
         // If it's a new controller, also encode the update for the AddressPermissions[] array
         if (!isExistingController) {
-          const updatedControllersArray = [...currentControllers, controllerAddress];
+          const updatedControllersArray = [
+            ...currentControllers,
+            controllerAddress,
+          ];
           const arrayUpdateData = erc725Instance.encodeData([
             {
               keyName: "AddressPermissions[]",
-              value: updatedControllersArray
-            }
+              value: updatedControllersArray,
+            },
           ]);
           // Assert the types returned by encodeData
           keysToSet.push(...(arrayUpdateData.keys as `0x${string}`[]));
@@ -390,9 +459,10 @@ export function PermissionManager() {
         });
 
         console.log(
-          `Transaction sent to ${isExistingController ? 'update' : 'add'} controller ${controllerAddress} with role ${role}: ${txHash}`
+          `Transaction sent to ${
+            isExistingController ? "update" : "add"
+          } controller ${controllerAddress} with role ${role}: ${txHash}`
         );
-
       } catch (err) {
         console.error(`Failed to grant permission for ${role}:`, err);
       } finally {
@@ -411,34 +481,129 @@ export function PermissionManager() {
 
   // Handler for the new button
   const handleUpdateProfileClick = () => {
-    console.log("Update Profile button clicked by Data Manager:", visitorAddress);
+    console.log("Update Profile button clicked by Branding:", visitorAddress);
   };
 
   // Placeholder handlers for other roles
   const handleSendLyxClick = () => {
-    console.log("Send LYX button clicked by Treasury Manager:", visitorAddress);
+    // console.log("Send LYX button clicked by Payroll:", visitorAddress);
+    setPayments([ { id: Date.now(), address: "", amount: "" } ]); // Reset to one empty row
+    setPaymentConfirmationMessage(""); // Clear previous confirmation
+    setShowPaymentModal(true); // Show modal on click
   };
 
   const handleCreateTokenClick = () => {
-    console.log("Create Token/NFT button clicked by Token Manager:", visitorAddress);
+    console.log(
+      "Create Token/NFT button clicked by Promotions:",
+      visitorAddress
+    );
   };
 
   // Handler to remove a manager (for Permission Manager view)
   const handleRemoveManager = (role: Role, address: `0x${string}`) => {
-    console.log(`Remove Manager button clicked for role: ${role}, address: ${address}`);
+    console.log(
+      `Remove Manager button clicked for role: ${role}, address: ${address}`
+    );
     // TODO: Implement actual removal logic later
   };
 
+  // --- Payment Modal Handlers ---
+  const handleAddPaymentRow = () => {
+    setPayments([...payments, { id: Date.now(), address: "", amount: "" }]);
+    setPaymentConfirmationMessage("");
+  };
+
+  const handleRemovePaymentRow = (idToRemove: number) => {
+    setPayments(payments.filter((payment) => payment.id !== idToRemove));
+    setPaymentConfirmationMessage("");
+  };
+
+  const handlePaymentChange = (
+    idToUpdate: number,
+    field: "address" | "amount",
+    value: string
+  ) => {
+    setPayments(
+      payments.map((payment) => {
+        if (payment.id === idToUpdate) {
+          if (field === "address") {
+            if (value.toLowerCase() === "payr") {
+              return { ...payment, address: MOCK_PAYROLL_ADDRESS };
+            } else if (value.toLowerCase() === "prom") {
+              return { ...payment, address: MOCK_PROMOTIONS_ADDRESS };
+            }
+          }
+          return { ...payment, [field]: value };
+        }
+        return payment;
+      })
+    );
+    setPaymentConfirmationMessage("");
+  };
+
+  const handleSendAllPayments = async () => {
+    // Basic validation (can be expanded)
+    const allValid = payments.every(
+      (p) => p.address.trim() !== "" && isAddress(p.address) && p.amount.trim() !== "" && !isNaN(parseFloat(p.amount)) && parseFloat(p.amount) > 0
+    );
+
+    if (!walletConnected || !client || !accounts?.[0]) {
+      setPaymentConfirmationMessage("Please connect your wallet first.");
+      return;
+    }
+
+    if (!allValid || payments.length === 0) {
+      setPaymentConfirmationMessage("Please fill all fields correctly (ensure valid addresses and amounts > 0).");
+      return;
+    }
+
+    setLoadingStates((prev) => ({ ...prev, sendingPayments: true }));
+    setPaymentConfirmationMessage("Processing payments...");
+
+    try {
+      const paymentPromises = payments.map((payment) => {
+        if (payment.address.trim() !== "" && isAddress(payment.address) && payment.amount.trim() !== "" && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0) {
+          console.log(`Simulating sending 1 LYX to: ${payment.address}`);
+          return client.sendTransaction({
+            account: accounts[0] as `0x${string}`,
+            to: payment.address as `0x${string}`,
+            value: parseEther("1"), // Send 1 LYX
+            chain: client.chain,
+          });
+        }
+        return Promise.resolve(); // Resolve immediately for invalid/empty rows
+      });
+
+      await Promise.all(paymentPromises);
+
+      // Simulate a delay for UX
+      setTimeout(() => {
+        setPaymentConfirmationMessage("Payment Sent!");
+        setLoadingStates((prev) => ({ ...prev, sendingPayments: false }));
+        // Optionally, reset payments after sending or keep them
+        // setPayments([{ id: Date.now(), address: "", amount: "" }]); 
+      }, 2000); // 2-second delay
+
+    } catch (error) {
+      console.error("Error during mock payment simulation:", error);
+      setPaymentConfirmationMessage("An error occurred while sending payments.");
+      setLoadingStates((prev) => ({ ...prev, sendingPayments: false }));
+    }
+  };
+
   // --- UI Rendering ---
-  console.log("Rendering with currentUserRole (visitor's role):", currentUserRole); // Log role before render
+  console.log(
+    "Rendering with currentUserRole (visitor's role):",
+    currentUserRole
+  ); // Log role before render
   return (
     <div className="w-full max-h-[900px] overflow-y-auto bg-white/80 backdrop-blur-md rounded-2xl p-6 space-y-6">
       {/* Conditionally render based on visitor's role */}
-      {currentUserRole === 'Data Manager' ? (
-        // View for Data Manager
+      {currentUserRole === "Branding" ? (
+        // View for Branding
         <div className="text-center space-y-4">
-          <h1 className="text-xl font-semibold">Data Manager Dashboard</h1>
-          <p>You are managing the profile below as a Data Manager.</p>
+          <h1 className="text-xl font-semibold">Branding Dashboard</h1>
+          <p>You are managing the profile below as a Branding.</p>
           <lukso-button variant="primary" onClick={handleUpdateProfileClick}>
             Update Profile Data
           </lukso-button>
@@ -450,55 +615,62 @@ export function PermissionManager() {
             {managedUpAddress ? (
               <LuksoProfile address={managedUpAddress} />
             ) : (
-              <p className="text-sm text-gray-500">Loading managed profile...</p>
+              <p className="text-sm text-gray-500">
+                Loading managed profile...
+              </p>
             )}
           </div>
         </div>
-      ) : currentUserRole === 'Token Manager' ? (
-         <div className="text-center space-y-4">
-             <h1 className="text-xl font-semibold">Token Manager Dashboard</h1>
-             <p>You are managing the profile below as a Token Manager.</p>
-             <lukso-button variant="primary" onClick={handleCreateTokenClick}>
-                Create Token/NFT
-             </lukso-button>
-            {/* Show managed profile */}
-            <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
-                <h2 className="text-lg font-semibold text-lime-700 text-center">
-                Profile Being Managed
-                </h2>
-                {managedUpAddress ? (
-                <LuksoProfile address={managedUpAddress} />
-                ) : (
-                <p className="text-sm text-gray-500">Loading managed profile...</p>
-                )}
-            </div>
-         </div>
-      ) : currentUserRole === 'Treasury Manager' ? (
-         <div className="text-center space-y-4">
-             <h1 className="text-xl font-semibold">Treasury Manager Dashboard</h1>
-             <p>You are managing the profile below as a Treasury Manager.</p>
-             <lukso-button variant="primary" onClick={handleSendLyxClick}>
-                Send LYX
-             </lukso-button>
-             {/* Show managed profile */}
-            <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
-                <h2 className="text-lg font-semibold text-lime-700 text-center">
-                Profile Being Managed
-                </h2>
-                {managedUpAddress ? (
-                <LuksoProfile address={managedUpAddress} />
-                ) : (
-                <p className="text-sm text-gray-500">Loading managed profile...</p>
-                )}
-            </div>
-         </div>
+      ) : currentUserRole === "Promotions" ? (
+        <div className="text-center space-y-4">
+          <h1 className="text-xl font-semibold">Promotions Dashboard</h1>
+          <p>You are managing the profile below as a Promotions.</p>
+          <lukso-button variant="primary" onClick={handleCreateTokenClick}>
+            Create Token/NFT
+          </lukso-button>
+          {/* Show managed profile */}
+          <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-lime-700 text-center">
+              Profile Being Managed
+            </h2>
+            {managedUpAddress ? (
+              <LuksoProfile address={managedUpAddress} />
+            ) : (
+              <p className="text-sm text-gray-500">
+                Loading managed profile...
+              </p>
+            )}
+          </div>
+        </div>
+      ) : currentUserRole === "Payroll" ? (
+        <div className="text-center space-y-4">
+          <h1 className="text-xl font-semibold">Payroll Dashboard</h1>
+          <p>You are managing the profile below as a Payroll.</p>
+          <lukso-button variant="primary" onClick={handleSendLyxClick}>
+            Send Payments
+          </lukso-button>
+          {/* Show managed profile */}
+          <div className="mt-6 bg-lime-50 p-4 rounded-lg shadow border border-lime-200 gap-2 flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-lime-700 text-center">
+              Profile Being Managed
+            </h2>
+            {managedUpAddress ? (
+              <LuksoProfile address={managedUpAddress} />
+            ) : (
+              <p className="text-sm text-gray-500">
+                Loading managed profile...
+              </p>
+            )}
+          </div>
+        </div>
       ) : (
         // Original view for Permission Manager (owner) or users with no specific role
         // Note: The owner viewing their own profile might also see this if they haven't assigned themselves another role.
         // We could add a check: if (visitorAddress === managedUpAddress) show owner view explicitly.
         <>
           <p className="text-md text-center text-gray-600 mb-6">
-            Assign roles to other profiles to manage this Universal Profile <lukso-username address={managedUpAddress}></lukso-username>
+            Assign roles to other profiles to manage this Universal Profile{" "}
+            <lukso-username address={managedUpAddress}></lukso-username>
           </p>
 
           {isInitialLoading && (
@@ -509,7 +681,8 @@ export function PermissionManager() {
 
           {!walletConnected && !isInitialLoading && (
             <div className="text-center text-red-500 font-semibold">
-              Please connect your Universal Profile wallet to assign roles or view your dashboard.
+              Please connect your Universal Profile wallet to assign roles or
+              view your dashboard.
             </div>
           )}
 
@@ -519,25 +692,30 @@ export function PermissionManager() {
               {ROLES.map((role) => {
                 const selectedAddress = selectedAddresses[role];
                 // Determine if the selected address is one that was loaded from the contract
-                const isAssigned = !!(assignedManagers[role] && selectedAddress === assignedManagers[role]);
+                const isAssigned = !!(
+                  assignedManagers[role] &&
+                  selectedAddress === assignedManagers[role]
+                );
                 return (
-                    <RoleCard
-                      key={role}
-                      role={role}
-                      selectedAddress={selectedAddress} // Pass the currently selected/assigned address
-                      isAssignedManager={isAssigned} // Pass the boolean flag
-                      searchQuery={searchQueries[role]}
-                      searchResults={searchResults[role]}
-                      isLoadingSearch={!!loadingStates[`search-${role}`]}
-                      isLoadingGrant={!!loadingStates[`add-${role}`]}
-                      showSearchDropdown={showSearchDropdown[role]}
-                      walletConnected={walletConnected} // Pass walletConnected status
-                      onClearSelection={() => clearSelection(role)}
-                      onGrantPermission={() => grantPermission(role)}
-                      onSearch={(query) => handleSearch(role, query)}
-                      onSelectProfile={(profile) => handleSelectProfile(role, profile)}
-                      onRemoveManager={handleRemoveManager}
-                    />
+                  <RoleCard
+                    key={role}
+                    role={role}
+                    selectedAddress={selectedAddress} // Pass the currently selected/assigned address
+                    isAssignedManager={isAssigned} // Pass the boolean flag
+                    searchQuery={searchQueries[role]}
+                    searchResults={searchResults[role]}
+                    isLoadingSearch={!!loadingStates[`search-${role}`]}
+                    isLoadingGrant={!!loadingStates[`add-${role}`]}
+                    showSearchDropdown={showSearchDropdown[role]}
+                    walletConnected={walletConnected} // Pass walletConnected status
+                    onClearSelection={() => clearSelection(role)}
+                    onGrantPermission={() => grantPermission(role)}
+                    onSearch={(query) => handleSearch(role, query)}
+                    onSelectProfile={(profile) =>
+                      handleSelectProfile(role, profile)
+                    }
+                    onRemoveManager={handleRemoveManager}
+                  />
                 );
               })}
             </div>
@@ -551,10 +729,100 @@ export function PermissionManager() {
             {managedUpAddress ? (
               <LuksoProfile address={managedUpAddress} />
             ) : (
-              <p className="text-sm text-gray-500">Loading managed profile...</p>
+              <p className="text-sm text-gray-500">
+                Loading managed profile...
+              </p>
             )}
           </div>
         </>
+      )}
+      {/* Payment Modal */}
+      {showPaymentModal && currentUserRole === "Payroll" && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Send Payments</h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                &times; {/* Close icon */}
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto space-y-3 pr-2">
+              {payments.map((payment) => (
+                <div key={payment.id} className="flex items-center space-x-2">
+                  <div className="flex-grow">
+                    {/* Placeholder for searchable address input - for now, a simple input */}
+                    <lukso-input
+                      placeholder="Recipient Address (0x...)"
+                      value={payment.address}
+                      onInput={(e: any) =>
+                        handlePaymentChange(payment.id, "address", e.target.value)
+                      }
+                      is-full-width
+                    ></lukso-input>
+                  </div>
+                  <div className="w-32">
+                    <lukso-input
+                      placeholder="Amount (LYX)"
+                      type="number"
+                      value={payment.amount}
+                      onInput={(e: any) =>
+                        handlePaymentChange(payment.id, "amount", e.target.value)
+                      }
+                      is-full-width
+                    ></lukso-input>
+                  </div>
+                  {payments.length > 1 && (
+                     <lukso-button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => handleRemovePaymentRow(payment.id)}
+                        is-icon
+                     >
+                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                     </lukso-button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-center justify-start">
+              <lukso-button
+                variant="secondary"
+                onClick={handleAddPaymentRow}
+                size="small"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Recipient
+              </lukso-button>
+            </div>
+
+            {paymentConfirmationMessage && (
+              <div className={`mt-4 text-sm text-center ${paymentConfirmationMessage === "Payment Sent!" ? "text-green-600 font-semibold" : "text-red-600"}`}>
+                {paymentConfirmationMessage}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end space-x-3">
+               <lukso-button
+                variant="secondary"
+                onClick={() => setShowPaymentModal(false)}
+              >
+                Cancel
+              </lukso-button>
+              <lukso-button
+                variant="primary"
+                onClick={handleSendAllPayments}
+                disabled={payments.length === 0 || payments.some(p => p.address.trim() === "" || !isAddress(p.address) || p.amount.trim() === "" || isNaN(parseFloat(p.amount)) || parseFloat(p.amount) <=0 ) || loadingStates['sendingPayments']}
+              >
+                {loadingStates['sendingPayments'] ? "Sending..." : "Send All"}
+              </lukso-button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

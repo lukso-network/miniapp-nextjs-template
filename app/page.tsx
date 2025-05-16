@@ -30,7 +30,7 @@ function MainContent() {
     });
   }, []);
 
-  const { selectedAddress, setSelectedAddress, isSearching } = useUpProvider();
+  const { setSelectedAddress, isSearching } = useUpProvider();
 
   if (!mounted) {
     return null; // or a loading placeholder
