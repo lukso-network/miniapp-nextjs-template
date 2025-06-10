@@ -20,7 +20,7 @@ import {
   createClientUPProvider,
   type UPClientProvider,
 } from "@lukso/up-provider";
-import { createWalletClient, custom } from "viem";
+import { createPublicClient, createWalletClient, custom } from "viem";
 import { lukso, luksoTestnet } from "viem/chains";
 import {
   createContext,
@@ -85,6 +85,16 @@ export function UpProvider({ children }: UpProviderProps) {
     return null;
   }, [chainId]);
 
+  const readClient = useMemo(() => {
+    if (provider && chainId) {
+      return createPublicClient({
+        chain: chainId === 42 ? lukso : luksoTestnet,
+        transport: custom(provider),
+      });
+    }
+    return null;
+  }, [chainId]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -99,10 +109,7 @@ export function UpProvider({ children }: UpProviderProps) {
         if (!mounted) return;
         setAccounts(_accounts);
 
-        const _chainId = parseInt(
-          (await provider.request("eth_chainId")) as string,
-          16
-        );
+        const _chainId = Number((await provider.request("eth_chainId")) as string);
         if (!mounted) return;
         setChainId(_chainId);
 
@@ -159,6 +166,7 @@ export function UpProvider({ children }: UpProviderProps) {
       provider,
       client,
       chainId,
+      readClient,
       accounts,
       contextAccounts,
       walletConnected,
@@ -170,6 +178,7 @@ export function UpProvider({ children }: UpProviderProps) {
   }, [
     client,
     chainId,
+    readClient,
     accounts,
     contextAccounts,
     walletConnected,
