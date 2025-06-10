@@ -99,7 +99,7 @@ export function UpProvider({ children }: UpProviderProps) {
         if (!mounted) return;
         setAccounts(_accounts);
 
-        const _chainId = (await provider.request("eth_chainId")) as number;
+        const _chainId = parseInt((await provider.request("eth_chainId")) as string, 16);
         if (!mounted) return;
         setChainId(_chainId);
 
