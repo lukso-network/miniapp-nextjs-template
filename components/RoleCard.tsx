@@ -106,32 +106,24 @@ export function RoleCard({
                         <div className="absolute bg-white border border-gray-200 rounded-md shadow-lg z-10 w-full max-h-[180px] overflow-y-auto mt-1 text-sm">
                             {searchResults.map((profile) => {
                                 const profileImage = profile.profileImages?.[0];
-                                const imageUrl = profileImage?.url?.replace("ipfs://", IPFS_GATEWAY)
-                                    || profileImage?.src?.replace("ipfs://", IPFS_GATEWAY);
+                                const ipfsUrl = profileImage?.url?.startsWith("ipfs://")
+                                    ? profileImage.url.replace("ipfs://", IPFS_GATEWAY)
+                                    : null;
+
                                 return (
                                     <button
                                         key={profile.id}
                                         className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors"
                                         onClick={() => onSelectProfile(profile)}
                                     >
-                                        {imageUrl ? (
-                                            <Image
-                                                src={imageUrl}
-                                                alt={`${profile.name || profile.id} avatar`}
-                                                className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
-                                                width={32}
-                                                height={32}
-                                                onError={(e) => { e.currentTarget.src = makeBlockie(profile.id); }}
-                                            />
-                                        ) : (
-                                            <Image
-                                                src={makeBlockie(profile.id)}
-                                                alt={`${profile.name || profile.id} avatar`}
-                                                className="w-8 h-8 rounded-full flex-shrink-0"
-                                                width={32}
-                                                height={32}
-                                            />
-                                        )}
+                                        <Image
+                                            src={ipfsUrl || makeBlockie(profile.id)}
+                                            alt={`${profile.name || profile.id} avatar`}
+                                            className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+                                            width={32}
+                                            height={32}
+                                            onError={(e) => { e.currentTarget.src = makeBlockie(profile.id); }}
+                                        />
                                         <div className="flex-1 min-w-0">
                                             <span className="block font-medium text-sm text-gray-800 truncate">
                                                 {profile.fullName || profile.name || "Unnamed Profile"}
