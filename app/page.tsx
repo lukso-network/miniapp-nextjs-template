@@ -1,9 +1,7 @@
 "use client";
 
 import { UpProvider } from "@/components/upProvider";
-import { Donate } from "@/components/Donate";
-import { ProfileSearch } from "@/components/ProfileSearch";
-import { useUpProvider } from "@/components/upProvider";
+import { ApparelSizeManager } from "@/components/ApparelSizeManager";
 import { useState, useEffect } from "react";
 
 // Import the LUKSO web-components library
@@ -30,21 +28,13 @@ function MainContent() {
     });
   }, []);
 
-  const { selectedAddress, setSelectedAddress, isSearching } = useUpProvider();
-
   if (!mounted) {
     return null; // or a loading placeholder
   }
 
   return (
     <>
-      <div className={`${isSearching ? "hidden" : "block"}`}>
-        <Donate selectedAddress={selectedAddress} />
-      </div>
-
-      <div className={`${!isSearching ? "hidden" : "block"}`}>
-        <ProfileSearch onSelectAddress={setSelectedAddress} />
-      </div>
+      <ApparelSizeManager />
     </>
   );
 }

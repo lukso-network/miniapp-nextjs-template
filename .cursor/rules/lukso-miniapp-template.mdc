@@ -1,0 +1,169 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# LUKSO MiniApp Next.js Template Rules
+
+## Project Overview
+
+This is a Next.js template for building mini-apps on the LUKSO blockchain using Universal Profiles (UPs). The template demonstrates wallet connection, profile search, and blockchain interactions through a donation interface.
+
+## Project Structure
+
+### Core Files
+- [app/layout.tsx](mdc:app/layout.tsx) - Root layout with global styles
+- [app/page.tsx](mdc:app/page.tsx) - Main application entry point with conditional rendering
+- [package.json](mdc:package.json) - Dependencies and scripts
+
+### Key Components
+- [components/upProvider.tsx](mdc:components/upProvider.tsx) - **CRITICAL**: UP Provider context for wallet connection and blockchain state
+- [components/Donate.tsx](mdc:components/Donate.tsx) - LYX token donation functionality
+- [components/ProfileSearch.tsx](mdc:components/ProfileSearch.tsx) - Profile search using Envio GraphQL API
+- [components/LuksoProfile.tsx](mdc:components/LuksoProfile.tsx) - Profile display using LUKSO web components
+
+### Styling & Configuration
+- [styles/globals.scss](mdc:styles/globals.scss) - Global styles with LUKSO web components
+- [tailwind.config.ts](mdc:tailwind.config.ts) - Tailwind CSS configuration
+- [tsconfig.json](mdc:tsconfig.json) - TypeScript configuration
+
+## Architecture Patterns
+
+### UP Provider Pattern
+The [upProvider.tsx](mdc:components/upProvider.tsx) is the central hub for:
+- UP Browser wallet connection
+- Blockchain state management (chainId, accounts, contextAccounts)
+- Viem client creation for transactions
+- Event listeners for wallet state changes
+
+### Component State Management
+- Use `useUpProvider()` hook for accessing wallet state
+- Components handle their own loading states
+- Error handling is managed at component level
+
+### Blockchain Integration
+- Uses Viem for blockchain interactions
+- ERC725.js for profile metadata fetching
+- GraphQL queries via Envio for profile search
+
+## Key Dependencies
+
+### LUKSO Specific
+- `@lukso/up-provider` - UP Browser wallet integration
+- `@lukso/web-components` - Ready-made LUKSO UI components
+- `@erc725/erc725.js` - Profile metadata fetching
+
+### Blockchain & Web3
+- `viem` - Ethereum library for transactions
+- `graphql-request` - GraphQL client for Envio queries
+
+### UI & Styling
+- `tailwindcss` - Utility-first CSS framework
+- `ethereum-blockies-base64` - Avatar generation fallback
+
+## Development Guidelines
+
+### Component Development
+1. Always use TypeScript with proper type definitions
+2. Import `useUpProvider` for wallet functionality
+3. Handle loading and error states appropriately
+4. Use LUKSO web components (`lukso-button`, `lukso-input`, etc.) for UI consistency
+
+### Wallet Integration
+- Check `walletConnected` state before blockchain operations
+- Use `client` from UP Provider for transactions
+- Handle both mainnet (chainId: 42) and testnet environments
+
+### Profile Handling
+- Use ERC725.js for fetching profile metadata
+- Implement blockies fallback for profile images
+- Handle IPFS URL conversion for profile images
+
+### Styling Guidelines
+- Use Tailwind classes for layout and spacing
+- Leverage LUKSO web components for branded elements
+- SCSS is available for complex styling needs
+
+## Common Patterns
+
+### Wallet Connection Check
+```typescript
+const { client, walletConnected, accounts } = useUpProvider();
+if (!client || !walletConnected) return;
+```
+
+### Transaction Pattern
+```typescript
+const tx = await client.sendTransaction({
+  account: accounts[0] as `0x${string}`,
+  to: recipientAddress,
+  value: parseUnits(amount.toString(), 18),
+  chain: client.chain,
+});
+await waitForTransactionReceipt(client, { hash: tx });
+```
+
+### Profile Search Pattern
+```typescript
+const envioUrl = chainId === 42 ? ENVIO_MAINNET_URL : ENVIO_TESTNET_URL;
+const data = await request(envioUrl, gqlQuery, { id: searchQuery });
+```
+
+## Environment Configuration
+
+### Chain Configuration
+- Mainnet: chainId 42, uses `lukso` chain from viem
+- Testnet: uses `luksoTestnet` chain from viem
+- RPC endpoints are configured in components
+
+### IPFS Configuration
+- Uses `https://api.universalprofile.cloud/ipfs/` as IPFS gateway
+- Automatically converts `ipfs://` URLs to HTTP URLs
+
+## Testing & Development
+
+### Local Development
+- Run `yarn dev` for development server
+- Test with UP Browser extension
+- Use localhost URL as mini-app in Grid
+
+### Component Testing
+- Each component should handle wallet connection state
+- Test both connected and disconnected states
+- Verify proper error handling
+
+## Security Considerations
+
+### Transaction Safety
+- Always validate amounts before transactions
+- Use proper error handling for failed transactions
+- Implement loading states to prevent double submissions
+
+### Address Validation
+- Validate Ethereum addresses before use
+- Handle invalid addresses gracefully
+- Use proper typing for addresses (`0x${string}`)
+
+## Performance Optimization
+
+### Component Loading
+- Lazy load web components only on client side
+- Use proper loading states for async operations
+- Implement proper cleanup for event listeners
+
+### Image Optimization
+- Use Next.js Image component for profile images
+- Implement fallback images for failed loads
+- Optimize IPFS image loading
+
+## Deployment Considerations
+
+### Build Process
+- Use `yarn build` for production builds
+- Pre-build step processes configuration
+- Ensure all dependencies are properly installed
+
+### Environment Setup
+- Works with Vercel, Replit, and other cloud platforms
+- Can be used as localhost mini-app in Grid
+- No environment variables required for basic functionality
