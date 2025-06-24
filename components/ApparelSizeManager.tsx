@@ -240,7 +240,7 @@ export function ApparelSizeManager() {
             setCurrentApparelData(parsedData);
             setNewShoeSizes(parsedData.shoeSizes.join(', '));
             setSelectedApparelSizes(parsedData.apparelSizes);
-          } catch (error) {
+          } catch {
             // Handle legacy single shoe size format
             setCurrentApparelData({ shoeSizes: [data.value], apparelSizes: [] });
             setNewShoeSizes(data.value);
@@ -458,7 +458,7 @@ export function ApparelSizeManager() {
                 is-disabled={isLoading || isSaving}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter multiple sizes like "8, 9, 10" to see shoes in all your sizes
+                Enter multiple sizes like &quot;8, 9, 10&quot; to see shoes in all your sizes
               </p>
             </div>
 
