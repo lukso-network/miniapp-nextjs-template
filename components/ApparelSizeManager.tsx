@@ -280,7 +280,7 @@ export function ApparelSizeManager() {
   }, [walletConnected, accounts, client, chainId]);
 
   const saveApparelData = useCallback(async () => {
-    if (!walletConnected || !accounts?.[0] || !client) return;
+    if (!client || !walletConnected || !accounts[0]) return;
 
     setIsSaving(true);
     try {
@@ -295,35 +295,52 @@ export function ApparelSizeManager() {
         apparelSizes: selectedApparelSizes
       };
 
-      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_MAINNET;
+      const jsonData = JSON.stringify(apparelData);
+
+      console.log('Saving apparel data:', jsonData);
+      console.log('Schema:', APPAREL_SIZE_SCHEMA);
+
+      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
       const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint);
 
-      const encodedData = erc725.encodeData([{
-        keyName: 'ApparelSize',
-        value: JSON.stringify(apparelData)
-      }]);
+      // Encode the apparel data
+      const encodedData = erc725.encodeData([
+        {
+          keyName: 'ApparelSize',
+          value: jsonData,
+        }
+      ]);
 
-      const calldata = encodeFunctionData({
-        abi: [{
-          name: 'setData',
-          type: 'function',
-          inputs: [
-            { name: 'dataKeys', type: 'bytes32[]' },
-            { name: 'dataValues', type: 'bytes[]' }
-          ]
-        }],
+      console.log('Encoded data:', encodedData);
+
+      // Create setData function call using viem
+      const setDataCalldata = encodeFunctionData({
+        abi: [
+          {
+            name: 'setData',
+            type: 'function',
+            inputs: [
+              { name: 'dataKey', type: 'bytes32' },
+              { name: 'dataValue', type: 'bytes' }
+            ],
+            outputs: [],
+            stateMutability: 'nonpayable'
+          }
+        ],
         functionName: 'setData',
-        args: [encodedData.keys, encodedData.values]
+        args: [encodedData.keys[0] as `0x${string}`, encodedData.values[0] as `0x${string}`]
       });
 
-      const tx = await client.sendTransaction({
+      // Execute setData transaction via Universal Profile
+      const tx = await client!.sendTransaction({
         account: accounts[0] as `0x${string}`,
         to: accounts[0] as `0x${string}`,
-        data: calldata,
-        chain: client.chain,
+        data: setDataCalldata,
+        value: BigInt(0),
+        chain: client!.chain,
       });
 
-      console.log('Transaction sent:', tx);
+      console.log('Apparel data saved successfully:', tx);
       
       // Update state and switch to marketplace view
       setCurrentApparelData(apparelData);
@@ -342,12 +359,35 @@ export function ApparelSizeManager() {
       setFilteredShoes(matchingShoes);
       setFilteredApparel(matchingApparel);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving apparel data:', error);
+
+      // Detailed error handling for debugging
+      if (error?.message) {
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Full error:', error);
+      }
+
+      let errorMessage = 'Failed to save apparel data';
+
+      if (error?.message) {
+        if (error.message.includes('User rejected') || error.message.includes('user rejected')) {
+          errorMessage = 'Transaction was cancelled by user';
+        } else if (error.message.includes('insufficient funds')) {
+          errorMessage = 'Insufficient LYX balance for transaction';
+        } else if (error.message.includes('execution reverted')) {
+          errorMessage = 'Transaction failed - this might be a permissions issue. Make sure your wallet has the necessary permissions to modify the Universal Profile.';
+        } else {
+          errorMessage = `Transaction failed: ${error.message}`;
+        }
+      }
+
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
-  }, [walletConnected, accounts, client, chainId, newShoeSizes, selectedApparelSizes]);
+  }, [client, walletConnected, accounts, newShoeSizes, selectedApparelSizes, chainId]);
 
   useEffect(() => {
     fetchApparelData();
