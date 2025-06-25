@@ -418,7 +418,6 @@ export function ApparelSizeManager() {
   if (!walletConnected) {
     return (
       <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4 text-center">
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Apparel Size Manager</h2>
         <p className="text-sm text-gray-600">Please connect your Universal Profile to manage your apparel preferences.</p>
       </div>
     );
@@ -441,7 +440,7 @@ export function ApparelSizeManager() {
             </button>
           )}
           
-          {currentView === 'connected-user' && hasApparelSizes && (
+          {currentView === 'connected-user' && (
             <button
               onClick={() => handleViewChange('marketplace')}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
@@ -594,9 +593,9 @@ export function ApparelSizeManager() {
               <lukso-icon name="cube" size="small" color="neutral-60" class="mr-1"></lukso-icon>
               Shoes ({filteredShoes.length})
             </h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               {filteredShoes.map((shoe) => (
-                <div key={shoe.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                <div key={shoe.id} className="border border-gray-200 rounded-lg p-2 hover:shadow-md transition-shadow">
                   <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden relative">
                     <img 
                       src={shoe.image} 
@@ -612,7 +611,7 @@ export function ApparelSizeManager() {
                   </div>
                   
                   <div className="space-y-1">
-                    <h5 className="font-semibold text-sm text-gray-900 truncate">{shoe.name}</h5>
+                    <h5 className="font-semibold text-xs text-gray-900 truncate">{shoe.name}</h5>
                     <p className="text-xs text-gray-600">{shoe.brand}</p>
                     
                     <div className="flex justify-between items-center pt-1">
@@ -639,9 +638,9 @@ export function ApparelSizeManager() {
               <lukso-icon name="wardrobe" size="small" color="neutral-60" class="mr-1"></lukso-icon>
               Apparel ({filteredApparel.length})
             </h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               {filteredApparel.map((apparel) => (
-                <div key={apparel.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                <div key={apparel.id} className="border border-gray-200 rounded-lg p-2 hover:shadow-md transition-shadow">
                   <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden relative">
                     <img 
                       src={apparel.image} 
@@ -657,7 +656,7 @@ export function ApparelSizeManager() {
                   </div>
                   
                   <div className="space-y-1">
-                    <h5 className="font-semibold text-sm text-gray-900 truncate">{apparel.name}</h5>
+                    <h5 className="font-semibold text-xs text-gray-900 truncate">{apparel.name}</h5>
                     <p className="text-xs text-gray-600">{apparel.brand}</p>
                     <p className="text-xs text-gray-500">{apparel.category}</p>
                     
