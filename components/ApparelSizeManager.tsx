@@ -5,8 +5,9 @@
  * Shows how any key can be attached to a Universal Profile and read by mini-apps.
  * 
  * Features:
- * - Connected User tab: Set/update shoe sizes and apparel sizes on the connected Universal Profile
- * - Marketplace tab: Display shoes and apparel filtered by the connected user's sizes
+ * - Smart navigation: Shows marketplace if user has sizes set, otherwise shows size setup
+ * - Settings button in marketplace view to modify sizes
+ * - Shopping button in size setup view to go to marketplace
  * 
  * @component
  */
@@ -31,8 +32,7 @@ const APPAREL_SIZE_SCHEMA = [
   },
 ];
 
-// Constants for IPFS and RPC endpoints
-const IPFS_GATEWAY = 'https://api.universalprofile.cloud/ipfs/';
+// Constants for RPC endpoints
 const RPC_ENDPOINT_TESTNET = 'https://rpc.testnet.lukso.network';
 const RPC_ENDPOINT_MAINNET = 'https://rpc.mainnet.lukso.network';
 
@@ -53,7 +53,8 @@ const MOCK_SHOES = [
     brand: 'StepStyle',
     size: '8',
     price: '150 LYX',
-    description: 'Comfortable running shoes for urban environments'
+    description: 'Comfortable running shoes for urban environments',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 2,
@@ -61,7 +62,8 @@ const MOCK_SHOES = [
     brand: 'Heritage',
     size: '8',
     price: '220 LYX',
-    description: 'Timeless leather shoes for formal occasions'
+    description: 'Timeless leather shoes for formal occasions',
+    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 3,
@@ -69,7 +71,8 @@ const MOCK_SHOES = [
     brand: 'AthleteX',
     size: '9',
     price: '180 LYX',
-    description: 'Professional athletic shoes for sports'
+    description: 'Professional athletic shoes for sports',
+    image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 4,
@@ -77,7 +80,8 @@ const MOCK_SHOES = [
     brand: 'ComfortZone',
     size: '9',
     price: '120 LYX',
-    description: 'Everyday comfortable walking shoes'
+    description: 'Everyday comfortable walking shoes',
+    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 5,
@@ -85,7 +89,8 @@ const MOCK_SHOES = [
     brand: 'TrendSet',
     size: '10',
     price: '160 LYX',
-    description: 'Trendy streetwear shoes'
+    description: 'Trendy streetwear shoes',
+    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 6,
@@ -93,7 +98,8 @@ const MOCK_SHOES = [
     brand: 'TrailBlazer',
     size: '10',
     price: '200 LYX',
-    description: 'Durable outdoor hiking shoes'
+    description: 'Durable outdoor hiking shoes',
+    image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 7,
@@ -101,7 +107,8 @@ const MOCK_SHOES = [
     brand: 'SimpleStep',
     size: '7',
     price: '140 LYX',
-    description: 'Clean and simple design for everyday wear'
+    description: 'Clean and simple design for everyday wear',
+    image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 8,
@@ -109,7 +116,8 @@ const MOCK_SHOES = [
     brand: 'MaxForce',
     size: '11',
     price: '250 LYX',
-    description: 'Top-tier athletic performance shoes'
+    description: 'Top-tier athletic performance shoes',
+    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=300&fit=crop&crop=center'
   }
 ];
 
@@ -122,7 +130,8 @@ const MOCK_APPAREL = [
     size: 'L',
     price: '89 LYX',
     description: 'Comfortable cotton blend hoodie with modern fit',
-    category: 'Hoodies'
+    category: 'Hoodies',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 2,
@@ -131,7 +140,8 @@ const MOCK_APPAREL = [
     size: 'M',
     price: '35 LYX',
     description: 'Essential cotton t-shirt in classic fit',
-    category: 'T-Shirts'
+    category: 'T-Shirts',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 3,
@@ -140,7 +150,8 @@ const MOCK_APPAREL = [
     size: 'XL',
     price: '150 LYX',
     description: 'Classic varsity jacket with premium materials',
-    category: 'Jackets'
+    category: 'Jackets',
+    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 4,
@@ -149,7 +160,8 @@ const MOCK_APPAREL = [
     size: 'L',
     price: '95 LYX',
     description: 'Modern slim fit jeans with stretch comfort',
-    category: 'Pants'
+    category: 'Pants',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 5,
@@ -158,7 +170,8 @@ const MOCK_APPAREL = [
     size: 'S',
     price: '28 LYX',
     description: 'Moisture-wicking athletic tank top',
-    category: 'Activewear'
+    category: 'Activewear',
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 6,
@@ -167,7 +180,8 @@ const MOCK_APPAREL = [
     size: 'XXL',
     price: '75 LYX',
     description: 'Comfortable oversized knit sweater',
-    category: 'Sweaters'
+    category: 'Sweaters',
+    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 7,
@@ -176,7 +190,8 @@ const MOCK_APPAREL = [
     size: 'XS',
     price: '120 LYX',
     description: 'Elegant fitted dress for special occasions',
-    category: 'Dresses'
+    category: 'Dresses',
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 8,
@@ -185,13 +200,14 @@ const MOCK_APPAREL = [
     size: 'M',
     price: '55 LYX',
     description: 'Classic polo shirt for casual wear',
-    category: 'Polo Shirts'
+    category: 'Polo Shirts',
+    image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=300&fit=crop&crop=center'
   }
 ];
 
 export function ApparelSizeManager() {
   const { client, walletConnected, accounts, chainId } = useUpProvider();
-  const [activeTab, setActiveTab] = useState<'connected-user' | 'marketplace'>('connected-user');
+  const [currentView, setCurrentView] = useState<'connected-user' | 'marketplace'>('connected-user');
   const [currentApparelData, setCurrentApparelData] = useState<ApparelData>({ shoeSizes: [], apparelSizes: [] });
   const [newShoeSizes, setNewShoeSizes] = useState<string>('');
   const [selectedApparelSizes, setSelectedApparelSizes] = useState<string[]>([]);
@@ -199,85 +215,76 @@ export function ApparelSizeManager() {
   const [isSaving, setIsSaving] = useState(false);
   const [filteredShoes, setFilteredShoes] = useState(MOCK_SHOES);
   const [filteredApparel, setFilteredApparel] = useState(MOCK_APPAREL);
+  const [hasApparelSizes, setHasApparelSizes] = useState(false);
 
-  // Filter shoes and apparel based on current sizes
-  useEffect(() => {
-    if (currentApparelData.shoeSizes.length > 0) {
-      const filtered = MOCK_SHOES.filter(shoe => 
-        currentApparelData.shoeSizes.includes(shoe.size)
-      );
-      setFilteredShoes(filtered.length > 0 ? filtered : MOCK_SHOES);
-    } else {
-      setFilteredShoes(MOCK_SHOES);
-    }
-
-    if (currentApparelData.apparelSizes.length > 0) {
-      const filtered = MOCK_APPAREL.filter(apparel => 
-        currentApparelData.apparelSizes.includes(apparel.size)
-      );
-      setFilteredApparel(filtered.length > 0 ? filtered : MOCK_APPAREL);
-    } else {
-      setFilteredApparel(MOCK_APPAREL);
-    }
-  }, [currentApparelData]);
-
-  // Fetch current apparel data from Universal Profile
   const fetchApparelData = useCallback(async () => {
-    if (!walletConnected || !accounts[0]) return;
+    if (!walletConnected || !accounts?.[0] || !client) return;
 
     setIsLoading(true);
     try {
-      const config = { ipfsGateway: IPFS_GATEWAY };
       const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint, config);
+      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint);
+
+      const result = await erc725.getData('ApparelSize');
       
-      try {
-        // Try to get the data using ERC725.js automatic decoding
-        const data = await erc725.getData('ApparelSize');
-        if (data?.value && typeof data.value === 'string') {
-          try {
-            const parsedData: ApparelData = JSON.parse(data.value);
-            setCurrentApparelData(parsedData);
-            setNewShoeSizes(parsedData.shoeSizes.join(', '));
-            setSelectedApparelSizes(parsedData.apparelSizes);
-          } catch {
-            // Handle legacy single shoe size format
-            setCurrentApparelData({ shoeSizes: [data.value], apparelSizes: [] });
-            setNewShoeSizes(data.value);
-            setSelectedApparelSizes([]);
+      if (result.value && typeof result.value === 'string') {
+        try {
+          const apparelData: ApparelData = JSON.parse(result.value);
+          const validData = {
+            shoeSizes: Array.isArray(apparelData.shoeSizes) ? apparelData.shoeSizes : [],
+            apparelSizes: Array.isArray(apparelData.apparelSizes) ? apparelData.apparelSizes : []
+          };
+          
+          setCurrentApparelData(validData);
+          setNewShoeSizes(validData.shoeSizes.join(', '));
+          setSelectedApparelSizes(validData.apparelSizes);
+          
+          // Determine if user has apparel sizes set
+          const hasData = validData.shoeSizes.length > 0 || validData.apparelSizes.length > 0;
+          setHasApparelSizes(hasData);
+          
+          // Smart navigation: show marketplace if user has sizes, otherwise show size setup
+          setCurrentView(hasData ? 'marketplace' : 'connected-user');
+          
+          // Filter marketplace items based on user's sizes
+          if (hasData) {
+            const matchingShoes = validData.shoeSizes.length > 0 
+              ? MOCK_SHOES.filter(shoe => validData.shoeSizes.includes(shoe.size))
+              : MOCK_SHOES;
+            
+            const matchingApparel = validData.apparelSizes.length > 0
+              ? MOCK_APPAREL.filter(apparel => validData.apparelSizes.includes(apparel.size))
+              : MOCK_APPAREL;
+            
+            setFilteredShoes(matchingShoes);
+            setFilteredApparel(matchingApparel);
+          } else {
+            setFilteredShoes(MOCK_SHOES);
+            setFilteredApparel(MOCK_APPAREL);
           }
-          return;
+        } catch (parseError) {
+          console.error('Error parsing ApparelSize data:', parseError);
         }
-      } catch (decodeError) {
-        console.log('ERC725.js automatic decoding failed:', decodeError);
-        console.log('This is likely due to existing data in an incompatible format.');
-        console.log('Starting fresh with empty state. You can re-enter your preferences.');
+      } else {
+        // No data found - show connected user view
+        setHasApparelSizes(false);
+        setCurrentView('connected-user');
       }
-      
-      // If no data found or all decoding attempts failed, reset to empty state
-      console.log('No apparel data found or unable to decode, starting fresh');
-      setCurrentApparelData({ shoeSizes: [], apparelSizes: [] });
-      setNewShoeSizes('');
-      setSelectedApparelSizes([]);
-      
     } catch (error) {
       console.error('Error fetching apparel data:', error);
-      // Reset to empty state on any error
-      setCurrentApparelData({ shoeSizes: [], apparelSizes: [] });
-      setNewShoeSizes('');
-      setSelectedApparelSizes([]);
+      setHasApparelSizes(false);
+      setCurrentView('connected-user');
     } finally {
       setIsLoading(false);
     }
-  }, [walletConnected, accounts, chainId]);
+  }, [walletConnected, accounts, client, chainId]);
 
-  // Save apparel data to Universal Profile
   const saveApparelData = useCallback(async () => {
-    if (!client || !walletConnected || !accounts[0]) return;
+    if (!walletConnected || !accounts?.[0] || !client) return;
 
     setIsSaving(true);
     try {
-      // Parse shoe sizes from comma-separated input
+      // Parse shoe sizes from input
       const shoeSizes = newShoeSizes
         .split(',')
         .map(size => size.trim())
@@ -288,70 +295,63 @@ export function ApparelSizeManager() {
         apparelSizes: selectedApparelSizes
       };
 
-      const jsonData = JSON.stringify(apparelData);
-      
-      console.log('Saving apparel data:', jsonData);
-      console.log('Schema:', APPAREL_SIZE_SCHEMA);
-      
-      const config = { ipfsGateway: IPFS_GATEWAY };
-      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint, config);
-      
-      // Encode the apparel data
-      const encodedData = erc725.encodeData([
-        {
-          keyName: 'ApparelSize',
-          value: jsonData,
-        }
-      ]);
-      
-      console.log('Encoded data:', encodedData);
+      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_MAINNET;
+      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint);
 
-      // Create setData function call using viem
-      const setDataCalldata = encodeFunctionData({
-        abi: [
-          {
-            name: 'setData',
-            type: 'function',
-            inputs: [
-              { name: 'dataKey', type: 'bytes32' },
-              { name: 'dataValue', type: 'bytes' }
-            ],
-            outputs: [],
-            stateMutability: 'nonpayable'
-          }
-        ],
+      const encodedData = erc725.encodeData([{
+        keyName: 'ApparelSize',
+        value: JSON.stringify(apparelData)
+      }]);
+
+      const calldata = encodeFunctionData({
+        abi: [{
+          name: 'setData',
+          type: 'function',
+          inputs: [
+            { name: 'dataKeys', type: 'bytes32[]' },
+            { name: 'dataValues', type: 'bytes[]' }
+          ]
+        }],
         functionName: 'setData',
-        args: [encodedData.keys[0] as `0x${string}`, encodedData.values[0] as `0x${string}`]
+        args: [encodedData.keys, encodedData.values]
       });
 
-      // Execute setData transaction via Universal Profile
       const tx = await client.sendTransaction({
         account: accounts[0] as `0x${string}`,
         to: accounts[0] as `0x${string}`,
-        data: setDataCalldata,
-        value: BigInt(0),
+        data: calldata,
         chain: client.chain,
       });
 
-      // Update local state
+      console.log('Transaction sent:', tx);
+      
+      // Update state and switch to marketplace view
       setCurrentApparelData(apparelData);
-      console.log('Apparel data saved successfully:', tx);
+      setHasApparelSizes(true);
+      setCurrentView('marketplace');
+      
+      // Filter marketplace items
+      const matchingShoes = apparelData.shoeSizes.length > 0 
+        ? MOCK_SHOES.filter(shoe => apparelData.shoeSizes.includes(shoe.size))
+        : MOCK_SHOES;
+      
+      const matchingApparel = apparelData.apparelSizes.length > 0
+        ? MOCK_APPAREL.filter(apparel => apparelData.apparelSizes.includes(apparel.size))
+        : MOCK_APPAREL;
+      
+      setFilteredShoes(matchingShoes);
+      setFilteredApparel(matchingApparel);
+      
     } catch (error) {
       console.error('Error saving apparel data:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [client, walletConnected, accounts, newShoeSizes, selectedApparelSizes, chainId]);
+  }, [walletConnected, accounts, client, chainId, newShoeSizes, selectedApparelSizes]);
 
-  // Fetch apparel data on component mount and when wallet connects
   useEffect(() => {
     fetchApparelData();
   }, [fetchApparelData]);
-
-  const handleTabChange = (tabName: 'connected-user' | 'marketplace') => {
-    setActiveTab(tabName);
-  };
 
   const handleShoeSizeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewShoeSizes(e.target.value);
@@ -371,70 +371,74 @@ export function ApparelSizeManager() {
     }
   };
 
+  const handleViewChange = (view: 'connected-user' | 'marketplace') => {
+    setCurrentView(view);
+  };
+
   if (!walletConnected) {
     return (
-      <div className="w-full bg-white/80 backdrop-blur-md rounded-2xl p-6 text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Apparel Size Manager</h2>
-        <p className="text-gray-600">Please connect your Universal Profile to manage your apparel preferences.</p>
+      <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4 text-center">
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Apparel Size Manager</h2>
+        <p className="text-sm text-gray-600">Please connect your Universal Profile to manage your apparel preferences.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-white/80 backdrop-blur-md rounded-2xl p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
-        Custom Metadata: Apparel & Shoe Sizes
-      </h2>
-      
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => handleTabChange('connected-user')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'connected-user'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Connected User
-        </button>
-        <button
-          onClick={() => handleTabChange('marketplace')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'marketplace'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Marketplace
-        </button>
+    <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4">
+      <div className="flex justify-between items-center mb-4">
+        
+        {/* Navigation buttons */}
+        <div className="flex gap-1">
+          {currentView === 'marketplace' && (
+            <button
+              onClick={() => handleViewChange('connected-user')}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              title="Update your size preferences"
+            >
+              <lukso-icon name="settings" size="small" color="neutral-60"></lukso-icon>
+              Size Preferences
+            </button>
+          )}
+          
+          {currentView === 'connected-user' && hasApparelSizes && (
+            <button
+              onClick={() => handleViewChange('marketplace')}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              title="Browse marketplace"
+            >
+              <lukso-icon name="category" size="small" color="neutral-60"></lukso-icon>
+              Visit Marketplace
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Connected User Tab Content */}
-      {activeTab === 'connected-user' && (
-        <div className="space-y-6">
+      {/* Connected User View */}
+      {currentView === 'connected-user' && (
+        <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">Set Your Size Preferences</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Store multiple shoe sizes and apparel sizes as JSON metadata on your Universal Profile
+            <h3 className="text-base font-semibold mb-1">Set Your Size Preferences</h3>
+            <p className="text-gray-600 text-xs mb-3">
+              Store sizes as metadata on your Universal Profile
             </p>
           </div>
 
           {/* Current Data Display */}
           {(currentApparelData.shoeSizes.length > 0 || currentApparelData.apparelSizes.length > 0) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="text-center space-y-2">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="text-center space-y-1">
                 <lukso-icon name="profile" size="small" color="neutral-20" class="mx-auto"></lukso-icon>
                 {currentApparelData.shoeSizes.length > 0 && (
                   <div>
-                    <span className="text-sm font-medium">Shoe Sizes: </span>
-                    <span className="text-lg font-bold text-blue-600">{currentApparelData.shoeSizes.join(', ')}</span>
+                    <span className="text-xs font-medium">Shoe Sizes: </span>
+                    <span className="text-sm font-bold text-gray-900">{currentApparelData.shoeSizes.join(', ')}</span>
                   </div>
                 )}
                 {currentApparelData.apparelSizes.length > 0 && (
                   <div>
-                    <span className="text-sm font-medium">Apparel Sizes: </span>
-                    <span className="text-lg font-bold text-blue-600">{currentApparelData.apparelSizes.join(', ')}</span>
+                    <span className="text-xs font-medium">Apparel Sizes: </span>
+                    <span className="text-sm font-bold text-gray-900">{currentApparelData.apparelSizes.join(', ')}</span>
                   </div>
                 )}
               </div>
@@ -442,11 +446,11 @@ export function ApparelSizeManager() {
           )}
 
           {/* Size Inputs */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Shoe Sizes Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Shoe Sizes (US) - Separate multiple sizes with commas
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Shoe Sizes (US) - comma separated
               </label>
               <lukso-input
                 type="text"
@@ -457,23 +461,20 @@ export function ApparelSizeManager() {
                 is-full-width
                 is-disabled={isLoading || isSaving}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter multiple sizes like &quot;8, 9, 10&quot; to see shoes in all your sizes
-              </p>
             </div>
 
             {/* Apparel Sizes Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Your Apparel Sizes - Select all that apply
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Apparel Sizes - Select all that apply
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-6 gap-2">
                 {APPAREL_SIZES.map((size) => (
                   <label
                     key={size}
-                    className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center justify-center p-2 border-2 rounded-md cursor-pointer transition-colors text-xs ${
                       selectedApparelSizes.includes(size)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-gray-500 bg-gray-50 text-gray-700'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -493,55 +494,54 @@ export function ApparelSizeManager() {
             <lukso-button
               onClick={saveApparelData}
               variant="primary"
-              size="medium"
+              size="small"
               isLoading={isSaving}
               disabled={(!newShoeSizes.trim() && selectedApparelSizes.length === 0) || isLoading}
               is-full-width
             >
-              {isSaving ? 'Saving to Profile...' : 'Save Size Preferences'}
+              {isSaving ? 'Saving...' : 'Save Preferences'}
             </lukso-button>
           </div>
 
           {/* Information Box */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
-            <h4 className="font-medium text-green-800 mb-2">How it works:</h4>
-            <ul className="text-green-700 space-y-1">
-              <li>• Your size preferences are stored as JSON metadata on your Universal Profile</li>
-              <li>• Multiple shoe sizes and apparel sizes are supported</li>
-              <li>• Any dApp can read this data to provide personalized experiences</li>
-              <li>• Data is stored on-chain and owned by you</li>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs">
+            <h4 className="font-medium text-green-800 mb-1">How it works:</h4>
+            <ul className="text-green-700 space-y-0.5">
+              <li>• Sizes stored on your Universal Profile</li>
+              <li>• Any dApp can read this for personalization</li>
+              <li>• Data is on-chain and owned by you</li>
             </ul>
           </div>
         </div>
       )}
 
-      {/* Marketplace Tab Content */}
-      {activeTab === 'marketplace' && (
-        <div className="space-y-6">
+      {/* Marketplace View */}
+      {currentView === 'marketplace' && (
+        <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">Personalized Marketplace</h3>
-            <p className="text-gray-600 text-sm mb-4">
+            <h3 className="text-base font-semibold mb-1">Personal Marketplace</h3>
+            <p className="text-gray-600 text-xs mb-2">
               {(currentApparelData.shoeSizes.length > 0 || currentApparelData.apparelSizes.length > 0)
-                ? 'Showing items that match your size preferences' 
-                : 'Set your sizes to see personalized recommendations'
+                ? 'Items matching your sizes' 
+                : 'Set your sizes for personalized recommendations'
               }
             </p>
           </div>
 
           {/* Current Preferences Display */}
           {(currentApparelData.shoeSizes.length > 0 || currentApparelData.apparelSizes.length > 0) && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm">
-              <div className="flex flex-wrap gap-4 justify-center">
+            <div className="bg-gray-50 rounded-lg p-2 text-xs">
+              <div className="flex flex-wrap gap-3 justify-center">
                 {currentApparelData.shoeSizes.length > 0 && (
                   <div>
-                    <span className="font-medium">Shoe Sizes: </span>
-                    <span className="text-blue-600">{currentApparelData.shoeSizes.join(', ')}</span>
+                    <span className="font-medium">Shoes: </span>
+                    <span className="text-gray-900">{currentApparelData.shoeSizes.join(', ')}</span>
                   </div>
                 )}
                 {currentApparelData.apparelSizes.length > 0 && (
                   <div>
-                    <span className="font-medium">Apparel Sizes: </span>
-                    <span className="text-blue-600">{currentApparelData.apparelSizes.join(', ')}</span>
+                    <span className="font-medium">Apparel: </span>
+                    <span className="text-gray-900">{currentApparelData.apparelSizes.join(', ')}</span>
                   </div>
                 )}
               </div>
@@ -550,40 +550,42 @@ export function ApparelSizeManager() {
 
           {/* Shoes Section */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 flex items-center">
-              <lukso-icon name="cube" size="small" color="neutral-60" class="mr-2"></lukso-icon>
+            <h4 className="text-sm font-semibold mb-2 flex items-center">
+              <lukso-icon name="cube" size="small" color="neutral-60" class="mr-1"></lukso-icon>
               Shoes ({filteredShoes.length})
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {filteredShoes.map((shoe) => (
-                <div key={shoe.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                    <lukso-icon name="cube" size="large" color="neutral-60"></lukso-icon>
+                <div key={shoe.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                  <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden relative">
+                    <img 
+                      src={shoe.image} 
+                      alt={shoe.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.classList.add('hidden');
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <lukso-icon name="cube" size="medium" color="neutral-60"></lukso-icon>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <h5 className="font-semibold text-gray-900">{shoe.name}</h5>
-                    <p className="text-sm text-gray-600">{shoe.brand}</p>
-                    <p className="text-xs text-gray-500">{shoe.description}</p>
+                  <div className="space-y-1">
+                    <h5 className="font-semibold text-sm text-gray-900 truncate">{shoe.name}</h5>
+                    <p className="text-xs text-gray-600">{shoe.brand}</p>
                     
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">Size: {shoe.size}</span>
-                        {currentApparelData.shoeSizes.includes(shoe.size) && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Your size!
-                          </span>
-                        )}
-                      </div>
-                      <span className="font-bold text-blue-600">{shoe.price}</span>
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-xs font-medium">Size {shoe.size}</span>
+                      <span className="font-bold text-xs text-gray-900">{shoe.price}</span>
                     </div>
                     
                     <lukso-button
-                      variant={currentApparelData.shoeSizes.includes(shoe.size) ? 'primary' : 'secondary'}
+                      variant="secondary"
                       size="small"
                       is-full-width
                     >
-                      {currentApparelData.shoeSizes.includes(shoe.size) ? 'Perfect Fit!' : 'View Details'}
+                      View
                     </lukso-button>
                   </div>
                 </div>
@@ -593,41 +595,43 @@ export function ApparelSizeManager() {
 
           {/* Apparel Section */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 flex items-center">
-              <lukso-icon name="wardrobe" size="small" color="neutral-60" class="mr-2"></lukso-icon>
+            <h4 className="text-sm font-semibold mb-2 flex items-center">
+              <lukso-icon name="wardrobe" size="small" color="neutral-60" class="mr-1"></lukso-icon>
               Apparel ({filteredApparel.length})
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {filteredApparel.map((apparel) => (
-                <div key={apparel.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                    <lukso-icon name="wardrobe" size="large" color="neutral-60"></lukso-icon>
+                <div key={apparel.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                  <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden relative">
+                    <img 
+                      src={apparel.image} 
+                      alt={apparel.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.classList.add('hidden');
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <lukso-icon name="wardrobe" size="medium" color="neutral-60"></lukso-icon>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <h5 className="font-semibold text-gray-900">{apparel.name}</h5>
-                    <p className="text-sm text-gray-600">{apparel.brand}</p>
-                    <p className="text-xs text-blue-600 font-medium">{apparel.category}</p>
-                    <p className="text-xs text-gray-500">{apparel.description}</p>
+                  <div className="space-y-1">
+                    <h5 className="font-semibold text-sm text-gray-900 truncate">{apparel.name}</h5>
+                    <p className="text-xs text-gray-600">{apparel.brand}</p>
+                    <p className="text-xs text-gray-500">{apparel.category}</p>
                     
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">Size: {apparel.size}</span>
-                        {currentApparelData.apparelSizes.includes(apparel.size) && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Your size!
-                          </span>
-                        )}
-                      </div>
-                      <span className="font-bold text-blue-600">{apparel.price}</span>
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-xs font-medium">Size {apparel.size}</span>
+                      <span className="font-bold text-xs text-gray-900">{apparel.price}</span>
                     </div>
                     
                     <lukso-button
-                      variant={currentApparelData.apparelSizes.includes(apparel.size) ? 'primary' : 'secondary'}
+                      variant="secondary"
                       size="small"
                       is-full-width
                     >
-                      {currentApparelData.apparelSizes.includes(apparel.size) ? 'Perfect Fit!' : 'View Details'}
+                      View
                     </lukso-button>
                   </div>
                 </div>
@@ -637,18 +641,16 @@ export function ApparelSizeManager() {
 
           {/* No Matching Items Messages */}
           {currentApparelData.shoeSizes.length > 0 && filteredShoes.length === 0 && (
-            <div className="text-center py-8">
-              <lukso-icon name="search" size="large" color="neutral-60" class="mb-4"></lukso-icon>
-              <p className="text-gray-600">No shoes found in your sizes ({currentApparelData.shoeSizes.join(', ')})</p>
-              <p className="text-sm text-gray-500 mt-2">Check back later for more options!</p>
+            <div className="text-center py-4">
+              <lukso-icon name="search" size="medium" color="neutral-60" class="mb-2"></lukso-icon>
+              <p className="text-xs text-gray-600">No shoes in your sizes</p>
             </div>
           )}
 
           {currentApparelData.apparelSizes.length > 0 && filteredApparel.length === 0 && (
-            <div className="text-center py-8">
-              <lukso-icon name="search" size="large" color="neutral-60" class="mb-4"></lukso-icon>
-              <p className="text-gray-600">No apparel found in your sizes ({currentApparelData.apparelSizes.join(', ')})</p>
-              <p className="text-sm text-gray-500 mt-2">Check back later for more options!</p>
+            <div className="text-center py-4">
+              <lukso-icon name="search" size="medium" color="neutral-60" class="mb-2"></lukso-icon>
+              <p className="text-xs text-gray-600">No apparel in your sizes</p>
             </div>
           )}
         </div>
