@@ -440,7 +440,7 @@ export function ApparelSizeManager() {
             </button>
           )}
           
-          {currentView === 'connected-user' && (
+          {currentView === 'connected-user' && hasApparelSizes && (
             <button
               onClick={() => handleViewChange('marketplace')}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
