@@ -54,7 +54,7 @@ const MOCK_SHOES = [
     size: '8',
     price: '150 LYX',
     description: 'Comfortable running shoes for urban environments',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 2,
@@ -63,7 +63,7 @@ const MOCK_SHOES = [
     size: '8',
     price: '220 LYX',
     description: 'Timeless leather shoes for formal occasions',
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 3,
@@ -72,7 +72,7 @@ const MOCK_SHOES = [
     size: '9',
     price: '180 LYX',
     description: 'Professional athletic shoes for sports',
-    image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1539185441755-769473a23570?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 4,
@@ -81,7 +81,7 @@ const MOCK_SHOES = [
     size: '9',
     price: '120 LYX',
     description: 'Everyday comfortable walking shoes',
-    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 5,
@@ -90,7 +90,7 @@ const MOCK_SHOES = [
     size: '10',
     price: '160 LYX',
     description: 'Trendy streetwear shoes',
-    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 6,
@@ -99,7 +99,7 @@ const MOCK_SHOES = [
     size: '10',
     price: '200 LYX',
     description: 'Durable outdoor hiking shoes',
-    image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 7,
@@ -108,7 +108,7 @@ const MOCK_SHOES = [
     size: '7',
     price: '140 LYX',
     description: 'Clean and simple design for everyday wear',
-    image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 8,
@@ -117,7 +117,7 @@ const MOCK_SHOES = [
     size: '11',
     price: '250 LYX',
     description: 'Top-tier athletic performance shoes',
-    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=300&fit=crop&crop=center'
   }
 ];
 
@@ -131,7 +131,7 @@ const MOCK_APPAREL = [
     price: '89 LYX',
     description: 'Comfortable cotton blend hoodie with modern fit',
     category: 'Hoodies',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1620799140408-edc7d8697a2f?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 2,
@@ -141,7 +141,7 @@ const MOCK_APPAREL = [
     price: '35 LYX',
     description: 'Essential cotton t-shirt in classic fit',
     category: 'T-Shirts',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 3,
@@ -151,7 +151,7 @@ const MOCK_APPAREL = [
     price: '150 LYX',
     description: 'Classic varsity jacket with premium materials',
     category: 'Jackets',
-    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 4,
@@ -161,7 +161,7 @@ const MOCK_APPAREL = [
     price: '95 LYX',
     description: 'Modern slim fit jeans with stretch comfort',
     category: 'Pants',
-    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 5,
@@ -171,7 +171,7 @@ const MOCK_APPAREL = [
     price: '28 LYX',
     description: 'Moisture-wicking athletic tank top',
     category: 'Activewear',
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1575987116913-e96e7d490a8a?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 6,
@@ -181,7 +181,7 @@ const MOCK_APPAREL = [
     price: '75 LYX',
     description: 'Comfortable oversized knit sweater',
     category: 'Sweaters',
-    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 7,
@@ -191,7 +191,7 @@ const MOCK_APPAREL = [
     price: '120 LYX',
     description: 'Elegant fitted dress for special occasions',
     category: 'Dresses',
-    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 8,
@@ -201,7 +201,7 @@ const MOCK_APPAREL = [
     price: '55 LYX',
     description: 'Classic polo shirt for casual wear',
     category: 'Polo Shirts',
-    image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1627225924765-552d49cf47ad?w=400&h=300&fit=crop&crop=center'
   }
 ];
 
