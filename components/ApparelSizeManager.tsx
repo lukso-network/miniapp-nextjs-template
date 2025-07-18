@@ -15,7 +15,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ERC725 } from '@erc725/erc725.js';
-import { useUpProvider } from './upProvider';
+// Temporarily use mock provider for local testing
+// import { useUpProvider } from './upProvider';
+import { useUpProvider } from './mockUpProvider';
 import { encodeFunctionData, keccak256, toHex } from 'viem';
 
 // Generate the key for ApparelSize using keccak256
@@ -63,7 +65,7 @@ const MOCK_SHOES = [
     size: '8',
     price: '220 LYX',
     description: 'Timeless leather shoes for formal occasions',
-    image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 3,
@@ -99,7 +101,7 @@ const MOCK_SHOES = [
     size: '10',
     price: '200 LYX',
     description: 'Durable outdoor hiking shoes',
-    image: 'https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 7,
@@ -131,7 +133,7 @@ const MOCK_APPAREL = [
     price: '89 LYX',
     description: 'Comfortable cotton blend hoodie with modern fit',
     category: 'Hoodies',
-    image: 'https://images.unsplash.com/photo-1620799140408-edc7d8697a2f?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 2,
@@ -171,7 +173,7 @@ const MOCK_APPAREL = [
     price: '28 LYX',
     description: 'Moisture-wicking athletic tank top',
     category: 'Activewear',
-    image: 'https://images.unsplash.com/photo-1575987116913-e96e7d490a8a?w=400&h=300&fit=crop&crop=center'
+    image: 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?w=400&h=300&fit=crop&crop=center'
   },
   {
     id: 6,
@@ -222,14 +224,12 @@ export function ApparelSizeManager() {
 
     setIsLoading(true);
     try {
-      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint);
-
-      const result = await erc725.getData('ApparelSize');
+      // For local testing, use localStorage instead of blockchain
+      const storedData = localStorage.getItem('apparelSizes');
       
-      if (result.value && typeof result.value === 'string') {
+      if (storedData) {
         try {
-          const apparelData: ApparelData = JSON.parse(result.value);
+          const apparelData: ApparelData = JSON.parse(storedData);
           const validData = {
             shoeSizes: Array.isArray(apparelData.shoeSizes) ? apparelData.shoeSizes : [],
             apparelSizes: Array.isArray(apparelData.apparelSizes) ? apparelData.apparelSizes : []
@@ -298,49 +298,14 @@ export function ApparelSizeManager() {
       const jsonData = JSON.stringify(apparelData);
 
       console.log('Saving apparel data:', jsonData);
-      console.log('Schema:', APPAREL_SIZE_SCHEMA);
+      
+      // For local testing, save to localStorage instead of blockchain
+      localStorage.setItem('apparelSizes', jsonData);
+      
+      // Simulate transaction delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const rpcEndpoint = chainId === 42 ? RPC_ENDPOINT_MAINNET : RPC_ENDPOINT_TESTNET;
-      const erc725 = new ERC725(APPAREL_SIZE_SCHEMA, accounts[0], rpcEndpoint);
-
-      // Encode the apparel data
-      const encodedData = erc725.encodeData([
-        {
-          keyName: 'ApparelSize',
-          value: jsonData,
-        }
-      ]);
-
-      console.log('Encoded data:', encodedData);
-
-      // Create setData function call using viem
-      const setDataCalldata = encodeFunctionData({
-        abi: [
-          {
-            name: 'setData',
-            type: 'function',
-            inputs: [
-              { name: 'dataKey', type: 'bytes32' },
-              { name: 'dataValue', type: 'bytes' }
-            ],
-            outputs: [],
-            stateMutability: 'nonpayable'
-          }
-        ],
-        functionName: 'setData',
-        args: [encodedData.keys[0] as `0x${string}`, encodedData.values[0] as `0x${string}`]
-      });
-
-      // Execute setData transaction via Universal Profile
-      const tx = await client!.sendTransaction({
-        account: accounts[0] as `0x${string}`,
-        to: accounts[0] as `0x${string}`,
-        data: setDataCalldata,
-        value: BigInt(0),
-        chain: client!.chain,
-      });
-
-      console.log('Apparel data saved successfully:', tx);
+      console.log('Apparel data saved successfully to localStorage');
       
       // Update state and switch to marketplace view
       setCurrentApparelData(apparelData);
@@ -361,33 +326,11 @@ export function ApparelSizeManager() {
       
     } catch (error: any) {
       console.error('Error saving apparel data:', error);
-
-      // Detailed error handling for debugging
-      if (error?.message) {
-        console.error('Error message:', error.message);
-        console.error('Error code:', error.code);
-        console.error('Full error:', error);
-      }
-
-      let errorMessage = 'Failed to save apparel data';
-
-      if (error?.message) {
-        if (error.message.includes('User rejected') || error.message.includes('user rejected')) {
-          errorMessage = 'Transaction was cancelled by user';
-        } else if (error.message.includes('insufficient funds')) {
-          errorMessage = 'Insufficient LYX balance for transaction';
-        } else if (error.message.includes('execution reverted')) {
-          errorMessage = 'Transaction failed - this might be a permissions issue. Make sure your wallet has the necessary permissions to modify the Universal Profile.';
-        } else {
-          errorMessage = `Transaction failed: ${error.message}`;
-        }
-      }
-
-      alert(errorMessage);
+      alert('Failed to save apparel data');
     } finally {
       setIsSaving(false);
     }
-  }, [client, walletConnected, accounts, newShoeSizes, selectedApparelSizes, chainId]);
+  }, [client, walletConnected, accounts, newShoeSizes, selectedApparelSizes]);
 
   useEffect(() => {
     fetchApparelData();
@@ -415,13 +358,14 @@ export function ApparelSizeManager() {
     setCurrentView(view);
   };
 
-  if (!walletConnected) {
-    return (
-      <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4 text-center">
-        <p className="text-sm text-gray-600">Please connect your Universal Profile to manage your apparel preferences.</p>
-      </div>
-    );
-  }
+  // For local testing, always show the component
+  // if (!walletConnected) {
+  //   return (
+  //     <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4 text-center">
+  //       <p className="text-sm text-gray-600">Please connect your Universal Profile to manage your apparel preferences.</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="w-full bg-white/90 backdrop-blur-sm rounded-xl p-4">
@@ -429,6 +373,18 @@ export function ApparelSizeManager() {
         
         {/* Navigation buttons */}
         <div className="flex gap-1">
+          {/* Clear data button for testing */}
+          <button
+            onClick={() => {
+              localStorage.removeItem('apparelSizes');
+              window.location.reload();
+            }}
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+            title="Clear stored data (testing only)"
+          >
+            <lukso-icon name="cross-outline" size="small" color="red-60"></lukso-icon>
+            Clear Data
+          </button>
           {currentView === 'marketplace' && (
             <button
               onClick={() => handleViewChange('connected-user')}
@@ -530,16 +486,32 @@ export function ApparelSizeManager() {
               </div>
             </div>
 
-            <lukso-button
-              onClick={saveApparelData}
-              variant="primary"
-              size="small"
-              isLoading={isSaving}
-              disabled={(!newShoeSizes.trim() && selectedApparelSizes.length === 0) || isLoading}
-              is-full-width
-            >
-              {isSaving ? 'Saving...' : 'Save Preferences'}
-            </lukso-button>
+            <div className="flex gap-2">
+              <lukso-button
+                onClick={saveApparelData}
+                variant="primary"
+                size="small"
+                isLoading={isSaving}
+                disabled={(!newShoeSizes.trim() && selectedApparelSizes.length === 0) || isLoading}
+                is-full-width
+              >
+                {isSaving ? 'Saving...' : 'Save Preferences'}
+              </lukso-button>
+              
+              <lukso-button
+                onClick={() => {
+                  setCurrentView('marketplace');
+                  // Show all items when browsing without preferences
+                  setFilteredShoes(MOCK_SHOES);
+                  setFilteredApparel(MOCK_APPAREL);
+                }}
+                variant="secondary"
+                size="small"
+                is-full-width
+              >
+                Browse Marketplace
+              </lukso-button>
+            </div>
           </div>
 
           {/* Information Box */}

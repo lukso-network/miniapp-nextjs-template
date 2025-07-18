@@ -1,6 +1,8 @@
 "use client";
 
-import { UpProvider } from "@/components/upProvider";
+// Temporarily use mock provider for local testing
+// import { UpProvider } from "@/components/upProvider";
+import { UpProvider } from "@/components/mockUpProvider";
 import { ApparelSizeManager } from "@/components/ApparelSizeManager";
 import { useState, useEffect } from "react";
 
