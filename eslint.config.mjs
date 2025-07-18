@@ -17,7 +17,10 @@ const eslintConfig = [
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-return": "off"
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "varsIgnorePattern": "^(ERC725|encodeFunctionData|APPAREL_SIZE_SCHEMA|RPC_ENDPOINT_TESTNET|RPC_ENDPOINT_MAINNET)$"
+      }]
     }
   }
 ];
