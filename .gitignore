@@ -40,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Hardhat files
+contracts-hardhat/node_modules
+contracts-hardhat/cache
+contracts-hardhat/artifacts
+contracts-hardhat/typechain-types
+contracts-hardhat/coverage.json
+contracts-hardhat/.env
+contracts-hardhat/yarn.lock
+contracts-hardhat/package-lock.json

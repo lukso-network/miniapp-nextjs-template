@@ -2837,35 +2837,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"grid-app-template@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "grid-app-template@workspace:."
-  dependencies:
-    "@erc725/erc725.js": "npm:^0.27.2"
-    "@eslint/eslintrc": "npm:^3"
-    "@lukso/up-provider": "npm:^0.3.5"
-    "@lukso/web-components": "npm:^1.104.0"
-    "@radix-ui/react-slot": "npm:^1.1.0"
-    "@types/node": "npm:^20"
-    "@types/react": "npm:^19"
-    "@types/react-dom": "npm:^19"
-    class-variance-authority: "npm:^0.7.1"
-    eslint: "npm:^9"
-    eslint-config-next: "npm:15.1.0"
-    ethereum-blockies-base64: "npm:^1.0.2"
-    graphql: "npm:^16.10.0"
-    graphql-request: "npm:^7.1.2"
-    next: "npm:15.2.3"
-    postcss: "npm:^8"
-    react: "npm:^19.0.0"
-    react-dom: "npm:^19.0.0"
-    sass: "npm:^1.83.1"
-    tailwindcss: "npm:^3.4.1"
-    typescript: "npm:^5"
-    viem: "npm:^2.21.54"
-  languageName: unknown
-  linkType: soft
-
 "has-bigints@npm:^1.0.2":
   version: 1.0.2
   resolution: "has-bigints@npm:1.0.2"
@@ -3558,6 +3529,35 @@ __metadata:
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
   languageName: node
   linkType: hard
+
+"lukso-game-registry@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "lukso-game-registry@workspace:."
+  dependencies:
+    "@erc725/erc725.js": "npm:^0.27.2"
+    "@eslint/eslintrc": "npm:^3"
+    "@lukso/up-provider": "npm:^0.3.5"
+    "@lukso/web-components": "npm:^1.104.0"
+    "@radix-ui/react-slot": "npm:^1.1.0"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    "@types/react-dom": "npm:^19"
+    class-variance-authority: "npm:^0.7.1"
+    eslint: "npm:^9"
+    eslint-config-next: "npm:15.1.0"
+    ethereum-blockies-base64: "npm:^1.0.2"
+    graphql: "npm:^16.10.0"
+    graphql-request: "npm:^7.1.2"
+    next: "npm:15.2.3"
+    postcss: "npm:^8"
+    react: "npm:^19.0.0"
+    react-dom: "npm:^19.0.0"
+    sass: "npm:^1.83.1"
+    tailwindcss: "npm:^3.4.1"
+    typescript: "npm:^5"
+    viem: "npm:^2.21.54"
+  languageName: unknown
+  linkType: soft
 
 "make-fetch-happen@npm:^14.0.3":
   version: 14.0.3

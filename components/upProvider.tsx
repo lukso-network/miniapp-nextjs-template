@@ -34,14 +34,11 @@ import {
 interface UpProviderContext {
   provider: UPClientProvider | null;
   client: ReturnType<typeof createWalletClient> | null;
+  readClient: ReturnType<typeof createPublicClient> | null;
   chainId: number;
   accounts: Array<`0x${string}`>;
   contextAccounts: Array<`0x${string}`>;
   walletConnected: boolean;
-  selectedAddress: `0x${string}` | null;
-  setSelectedAddress: (address: `0x${string}` | null) => void;
-  isSearching: boolean;
-  setIsSearching: (isSearching: boolean) => void;
 }
 
 const UpContext = createContext<UpProviderContext | undefined>(undefined);
@@ -68,10 +65,6 @@ export function UpProvider({ children }: UpProviderProps) {
     []
   );
   const [walletConnected, setWalletConnected] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<`0x${string}` | null>(
-    null
-  );
-  const [isSearching, setIsSearching] = useState(false);
   const [account] = accounts ?? [];
   const [contextAccount] = contextAccounts ?? [];
 
@@ -90,6 +83,9 @@ export function UpProvider({ children }: UpProviderProps) {
       return createPublicClient({
         chain: chainId === 42 ? lukso : luksoTestnet,
         transport: custom(provider),
+        batch: {
+          multicall: true,
+        },
       });
     }
     return null;
@@ -100,7 +96,12 @@ export function UpProvider({ children }: UpProviderProps) {
 
     async function init() {
       try {
-        if (!client || !provider) return;
+        if (!provider) return;
+        
+        // Wait a bit for provider to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (!mounted) return;
 
         const _accounts = (await provider.request(
           "eth_accounts",
@@ -120,7 +121,11 @@ export function UpProvider({ children }: UpProviderProps) {
         setContextAccounts(_contextAccounts);
         setWalletConnected(_accounts[0] != null && _contextAccounts[0] != null);
       } catch (error) {
-        console.error(error);
+        console.error('Provider init error:', error);
+        // Set default chain if provider fails
+        if (mounted) {
+          setChainId(4201); // Default to testnet
+        }
       }
     }
 
@@ -172,10 +177,6 @@ export function UpProvider({ children }: UpProviderProps) {
       accounts,
       contextAccounts,
       walletConnected,
-      selectedAddress,
-      setSelectedAddress,
-      isSearching,
-      setIsSearching,
     };
   }, [
     client,
@@ -184,8 +185,6 @@ export function UpProvider({ children }: UpProviderProps) {
     accounts,
     contextAccounts,
     walletConnected,
-    selectedAddress,
-    isSearching,
   ]);
   return (
     <UpContext.Provider value={data}>

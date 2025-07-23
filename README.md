@@ -1,83 +1,119 @@
-# Mini-App next.js template
+# LUKSO Game Registry Template
 
-A template project demonstrating how to build mini-apps using the [up-provider package](https://github.com/lukso-network/tools-up-provider) and interacting with Universal Profiles on [Universal Everything](https://universaleverything.io), built with [next.js](https://nextjs.org).
+A blockchain-based gaming platform built on LUKSO that features daily challenges with deterministic gameplay and on-chain leaderboards.
 
-## Overview
+## Features
 
-This template showcases:
+- 🎮 **Daily Gaming Challenges**: New games every day with deterministic seeds from blockchain
+- 🏆 **On-chain Leaderboards**: Global competition with scores stored on LUKSO
+- 🎲 **Fair Gameplay**: Same game experience for all players using blockchain-based seeds
+- 💰 **Gas Efficient**: Only submit scores when beating personal best
+- 🔐 **Universal Profile Integration**: Connect with LUKSO's Universal Profiles
 
-- [UP-Provider](https://github.com/lukso-network/tools-up-provider) implementation and wallet connection on the Grid
-- Profile search functionality using Envio integration for fast querying
-- Integrates the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library for ready-to-use branded components
-- Uses the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library to fetch profile data from the blockchain
+## Tech Stack
 
-> **Cursor Tip:** You can rename this README.md file to `repo.cursorrules` for better AI development experience using Cursor.
-
-## Key Features
-
-### UP-Provider Integration
-
-The template demonstrates how to:
-
-- Connect to Universal Profile browser extension from the Grid
-- Manage UP contexts on the Grid
-
-### Envio Integration
-
-Shows how to:
-
-- Query the LUKSO Envio indexer
-- Search for Universal Profiles
-- Display profile information and images
-
-### Web Components
-
-Shows how to:
-
-- Use the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile card
-
-### ERC-725.js
-
-Shows how to:
-
-- Use the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library to fetch profile data from the blockchain
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Blockchain**: LUKSO Network, Universal Profiles (UP)
+- **Smart Contracts**: Solidity, Hardhat
+- **Styling**: Tailwind CSS, LUKSO Web Components
 
 ## Getting Started
 
-1. Install dependencies:
+### Prerequisites
 
+- Node.js 18+
+- Yarn package manager
+- Universal Profile Browser Extension
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd lukso-game-registry
+```
+
+2. Install dependencies:
 ```bash
 yarn install
 ```
 
-2. Run the development server:
+3. Set up smart contracts:
+```bash
+cd contracts-hardhat
+npm install
+cp .env.example .env
+# Add your private key to .env
+```
 
+### Development
+
+1. Start the development server:
 ```bash
 yarn dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Open [http://localhost:3000](http://localhost:3000)
 
-4. Testing your mini-app on the Grid:
+## Smart Contract Deployment
 
-Simply add your localhost url as a mini-app to your Grid!
+The GameRegistry contract is already deployed on LUKSO testnet at:
+`0x83E0c99bF5BE14f8b9c4917c687ad5BC4Db625f3`
 
-> Alternatively, you can use free cloud deployment services like Vercel, Replit, etc. and use the url provided from those services.
+To deploy your own:
 
-## Project Structure
+```bash
+cd contracts-hardhat
+npm run deploy:testnet
+```
 
-- `components/upProvider.tsx`: Core UP Provider implementation and wallet connection logic
-- `components/ProfileSearch.tsx`: Example of Envio integration for profile search
-- `components/Donate.tsx`: Example use-case of this template. Uses the client from the up-provider package to interact with the blockchain
-- `components/LuksoProfile.tsx`: Example of using the [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) library to display profile images that is fetched using the [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) library
+## Game Architecture
 
-## Learn More
+### Smart Contract
 
-- [LUKSO Documentation](https://docs.lukso.tech/) - Learn more about developing on LUKSO
-- [UP Browser Extension](https://docs.lukso.tech/install-up-browser-extension) - Install the Universal Profile Browser Extension
-- [erc725js](https://docs.lukso.tech/tools/dapps/erc725js/getting-started) - Learn more about the erc725js library
-- [@lukso/web-components](https://www.npmjs.com/package/@lukso/web-components) - Learn more about the @lukso/web-components library
+The `GameRegistry` contract provides:
+- Game registration system
+- Deterministic seed generation
+- Score submission and validation
+- Leaderboard management
 
-## Contributing
+### Frontend Components
 
-Contributions are welcome! Feel free to submit issues and pull requests.
+- **FlappyBird**: Canvas-based game with deterministic pipe generation
+- **GameContainer**: Manages game state and blockchain interactions
+- **Leaderboard**: Displays top players
+- **useGameRegistry**: Hook for contract interactions
+
+## Adding New Games
+
+1. Create a new game component in `/components/games/`
+2. Use the seed from `useGameRegistry` for deterministic generation
+3. Call `onGameOver` prop with the final score
+4. Register the game type in the smart contract
+
+## Environment Variables
+
+Create a `.env` file in the `contracts-hardhat` directory:
+
+```env
+PRIVATE_KEY=your_private_key_here
+LUKSO_RPC_URL=https://rpc.lukso.network
+LUKSO_TESTNET_RPC_URL=https://rpc.testnet.lukso.network
+```
+
+## Scripts
+
+### Frontend
+- `yarn dev` - Start development server
+- `yarn build` - Build for production
+- `yarn start` - Start production server
+
+### Smart Contracts
+- `npm run compile` - Compile contracts
+- `npm run test` - Run tests
+- `npm run deploy:testnet` - Deploy to LUKSO testnet
+- `npm run deploy:mainnet` - Deploy to LUKSO mainnet
+
+## License
+
+MIT
