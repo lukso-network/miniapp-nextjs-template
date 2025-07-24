@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { generatePipeSequence } from '@/lib/games/seedUtils';
 
 interface FlappyBirdProps {
-  gameId: string;
   seed: string;
   onGameOver: (score: number) => void;
 }
@@ -20,22 +19,24 @@ interface Pipe {
   passed: boolean;
 }
 
-const GRAVITY = 0.5;
-const JUMP_FORCE = -8;
-const PIPE_WIDTH = 60;
-const PIPE_GAP = 150;
-const PIPE_SPEED = 3;
-const BIRD_SIZE = 30;
-const BIRD_X = 100;
+const GRAVITY = 0.4;
+const JUMP_FORCE = -6;
+const PIPE_WIDTH = 50;
+const PIPE_GAP = 100;
+const PIPE_SPEED = 2.5;
+const BIRD_SIZE = 20;
+const BIRD_X = 80;
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 400;
 
-export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
+export function FlappyBird({ seed, onGameOver }: FlappyBirdProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'gameOver'>('ready');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   
   // Game state refs for animation loop
-  const birdRef = useRef<Bird>({ y: 250, velocity: 0 });
+  const birdRef = useRef<Bird>({ y: 200, velocity: 0 });
   const pipesRef = useRef<Pipe[]>([]);
   const pipeSequenceRef = useRef<number[]>([]);
   const pipeIndexRef = useRef(0);
@@ -48,16 +49,18 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
     }
   }, [seed]);
 
-  // Load high score from localStorage
+  // Load high score
   useEffect(() => {
-    const saved = localStorage.getItem(`flappy-highscore-${gameId}`);
-    if (saved) {
-      setHighScore(parseInt(saved, 10));
+    const today = new Date().toISOString().split('T')[0];
+    const key = `flappy-highscore-daily-${today}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      setHighScore(parseInt(stored, 10));
     }
-  }, [gameId]);
+  }, []);
 
   const resetGame = useCallback(() => {
-    birdRef.current = { y: 250, velocity: 0 };
+    birdRef.current = { y: 200, velocity: 0 };
     pipesRef.current = [];
     pipeIndexRef.current = 0;
     setScore(0);
@@ -75,25 +78,32 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
     }
   }, [gameState, resetGame]);
 
-  const checkCollision = useCallback((bird: Bird, pipe: Pipe): boolean => {
-    const birdLeft = BIRD_X - BIRD_SIZE / 2;
-    const birdRight = BIRD_X + BIRD_SIZE / 2;
-    const birdTop = bird.y - BIRD_SIZE / 2;
-    const birdBottom = bird.y + BIRD_SIZE / 2;
-
-    const pipeLeft = pipe.x;
-    const pipeRight = pipe.x + PIPE_WIDTH;
-    const pipeTopHeight = (pipe.height / 100) * 500;
-    const pipeBottomStart = pipeTopHeight + PIPE_GAP;
-
-    // Check if bird is within pipe x-range
-    if (birdRight > pipeLeft && birdLeft < pipeRight) {
-      // Check collision with top pipe or bottom pipe
-      if (birdTop < pipeTopHeight || birdBottom > pipeBottomStart) {
-        return true;
-      }
+  const checkCollision = useCallback(() => {
+    const bird = birdRef.current;
+    
+    // Check boundaries
+    if (bird.y + BIRD_SIZE / 2 > CANVAS_HEIGHT || bird.y - BIRD_SIZE / 2 < 0) {
+      return true;
     }
 
+    // Check pipe collisions
+    for (const pipe of pipesRef.current) {
+      if (
+        BIRD_X + BIRD_SIZE / 2 > pipe.x &&
+        BIRD_X - BIRD_SIZE / 2 < pipe.x + PIPE_WIDTH
+      ) {
+        const topPipeHeight = CANVAS_HEIGHT * (pipe.height / 100);
+        const bottomPipeTop = topPipeHeight + PIPE_GAP;
+        
+        if (
+          bird.y - BIRD_SIZE / 2 < topPipeHeight ||
+          bird.y + BIRD_SIZE / 2 > bottomPipeTop
+        ) {
+          return true;
+        }
+      }
+    }
+    
     return false;
   }, []);
 
@@ -105,67 +115,72 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
     if (!ctx) return;
 
     // Clear canvas
-    ctx.fillStyle = '#87CEEB'; // Sky blue
-    ctx.fillRect(0, 0, 800, 500);
+    ctx.fillStyle = '#70c5ce'; // Sky blue
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     if (gameState === 'playing') {
-      // Update bird physics
+      // Update bird
       birdRef.current.velocity += GRAVITY;
       birdRef.current.y += birdRef.current.velocity;
 
-      // Check boundaries
-      if (birdRef.current.y < 0 || birdRef.current.y > 500) {
-        setGameState('gameOver');
-        onGameOver(score);
-        return;
-      }
-
       // Update pipes
-      pipesRef.current = pipesRef.current.filter(pipe => pipe.x > -PIPE_WIDTH);
-      
+      pipesRef.current = pipesRef.current.filter(pipe => pipe.x + PIPE_WIDTH > -PIPE_WIDTH);
+      pipesRef.current.forEach(pipe => {
+        pipe.x -= PIPE_SPEED;
+        
+        // Score when passing pipe
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < BIRD_X) {
+          pipe.passed = true;
+          setScore(prev => prev + 1);
+        }
+      });
+
       // Add new pipes
-      if (pipesRef.current.length === 0 || pipesRef.current[pipesRef.current.length - 1].x < 500) {
+      if (pipesRef.current.length === 0 || pipesRef.current[pipesRef.current.length - 1].x < 400) {
         pipesRef.current.push({
-          x: 800,
+          x: CANVAS_WIDTH,
           height: pipeSequenceRef.current[pipeIndexRef.current % pipeSequenceRef.current.length],
           passed: false
         });
         pipeIndexRef.current++;
       }
 
-      // Move pipes and check collisions
-      pipesRef.current.forEach(pipe => {
-        pipe.x -= PIPE_SPEED;
-
-        // Check if bird passed the pipe
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < BIRD_X) {
-          pipe.passed = true;
-          setScore(s => s + 1);
+      // Check collisions
+      if (checkCollision()) {
+        setGameState('gameOver');
+        const currentScore = score;
+        
+        // Update high score
+        if (currentScore > highScore) {
+          setHighScore(currentScore);
+          const today = new Date().toISOString().split('T')[0];
+          const key = `flappy-highscore-daily-${today}`;
+          localStorage.setItem(key, currentScore.toString());
         }
-
-        // Check collision
-        if (checkCollision(birdRef.current, pipe)) {
-          setGameState('gameOver');
-          const finalScore = score;
-          if (finalScore > highScore) {
-            setHighScore(finalScore);
-            localStorage.setItem(`flappy-highscore-${gameId}`, finalScore.toString());
-          }
-          onGameOver(finalScore);
-        }
-      });
+        
+        // Report game over
+        onGameOver(currentScore);
+      }
     }
 
     // Draw pipes
-    ctx.fillStyle = '#228B22'; // Green
+    ctx.fillStyle = '#228B22'; // Forest green
     pipesRef.current.forEach(pipe => {
-      const topHeight = (pipe.height / 100) * 500;
-      const bottomStart = topHeight + PIPE_GAP;
+      const topPipeHeight = CANVAS_HEIGHT * (pipe.height / 100);
+      const bottomPipeTop = CANVAS_HEIGHT * (pipe.height / 100) + PIPE_GAP;
       
       // Top pipe
-      ctx.fillRect(pipe.x, 0, PIPE_WIDTH, topHeight);
+      ctx.fillRect(pipe.x, 0, PIPE_WIDTH, topPipeHeight);
       // Bottom pipe
-      ctx.fillRect(pipe.x, bottomStart, PIPE_WIDTH, 500 - bottomStart);
+      ctx.fillRect(pipe.x, bottomPipeTop, PIPE_WIDTH, CANVAS_HEIGHT - bottomPipeTop);
+
+      // Draw ground line
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pipe.x, CANVAS_HEIGHT);
+      ctx.lineTo(pipe.x + PIPE_WIDTH, CANVAS_HEIGHT);
+      ctx.stroke();
     });
 
     // Draw bird
@@ -176,38 +191,38 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
 
     // Draw score
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 24px Arial';
-    ctx.fillText(`Score: ${score}`, 10, 30);
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText(`Score: ${score}`, 10, 25);
 
     // Draw game state messages
     if (gameState === 'ready') {
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 36px Arial';
+      ctx.font = 'bold 24px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Click to Start', 400, 250);
-      ctx.font = '20px Arial';
-      ctx.fillText(`High Score: ${highScore}`, 400, 290);
+      ctx.fillText('Click to Start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      ctx.font = '16px Arial';
+      ctx.fillText(`High Score: ${highScore}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
       ctx.textAlign = 'start';
     } else if (gameState === 'gameOver') {
       ctx.fillStyle = 'white';
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = 3;
-      ctx.font = 'bold 48px Arial';
+      ctx.lineWidth = 2;
+      ctx.font = 'bold 32px Arial';
       ctx.textAlign = 'center';
-      ctx.strokeText('Game Over!', 400, 200);
-      ctx.fillText('Game Over!', 400, 200);
-      ctx.font = 'bold 24px Arial';
-      ctx.strokeText(`Final Score: ${score}`, 400, 250);
-      ctx.fillText(`Final Score: ${score}`, 400, 250);
-      ctx.strokeText(`High Score: ${highScore}`, 400, 290);
-      ctx.fillText(`High Score: ${highScore}`, 400, 290);
-      ctx.strokeText('Click to Play Again', 400, 340);
-      ctx.fillText('Click to Play Again', 400, 340);
+      ctx.strokeText('Game Over!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+      ctx.fillText('Game Over!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+      ctx.font = 'bold 18px Arial';
+      ctx.strokeText(`Final Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      ctx.fillText(`Final Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      ctx.strokeText(`High Score: ${highScore}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+      ctx.fillText(`High Score: ${highScore}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+      ctx.strokeText('Click to Play Again', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 70);
+      ctx.fillText('Click to Play Again', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 70);
       ctx.textAlign = 'start';
     }
 
     animationIdRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, score, highScore, checkCollision, onGameOver, gameId]);
+  }, [gameState, score, highScore, checkCollision, onGameOver]);
 
   // Start game loop
   useEffect(() => {
@@ -233,14 +248,14 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
   }, [jump]);
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="w-full h-full flex items-center justify-center">
       <canvas
         ref={canvasRef}
-        width={800}
-        height={500}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
         onClick={jump}
-        className="border border-gray-300 rounded-lg cursor-pointer"
-        style={{ imageRendering: 'pixelated' }}
+        className="max-w-full max-h-full border border-gray-300 rounded-lg cursor-pointer"
+        style={{ imageRendering: 'pixelated', width: '100%', height: '100%', objectFit: 'contain' }}
       />
     </div>
   );

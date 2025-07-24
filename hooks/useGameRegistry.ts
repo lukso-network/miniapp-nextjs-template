@@ -46,8 +46,8 @@ export function useGameRegistry() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use fallback client if readClient isn't available
-  const publicClient = readClient || fallbackClient;
+  // Always use fallback client for reads to avoid wallet provider issues
+  const publicClient = fallbackClient;
 
   const registerGame = async (
     gameId: string,
@@ -63,6 +63,15 @@ export function useGameRegistry() {
     setError(null);
 
     try {
+      console.log('Registering game with params:', {
+        gameId,
+        name,
+        gameType,
+        metadata: JSON.stringify(metadata),
+        account: accounts[0],
+        contractAddress: GAME_REGISTRY_ADDRESS
+      });
+
       const hash = await client.writeContract({
         address: GAME_REGISTRY_ADDRESS,
         abi: GAME_REGISTRY_ABI,
@@ -71,10 +80,21 @@ export function useGameRegistry() {
         account: accounts[0],
       } as any);
 
+      console.log('Game registration transaction hash:', hash);
+
       // Wait for transaction confirmation
-      await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log('Game registration receipt:', receipt);
+      
       return hash;
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Game registration error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        cause: err.cause,
+        details: err.details,
+        shortMessage: err.shortMessage
+      });
       setError(err instanceof Error ? err.message : 'Failed to register game');
       throw err;
     } finally {
@@ -123,29 +143,15 @@ export function useGameRegistry() {
         contractAddress: GAME_REGISTRY_ADDRESS,
       });
 
-      // First, simulate the transaction to get better error messages
-      try {
-        const { request } = await publicClient.simulateContract({
-          address: GAME_REGISTRY_ADDRESS,
-          abi: GAME_REGISTRY_ABI,
-          functionName: 'submitScore',
-          args: [gameId, BigInt(score)],
-          account: accounts[0],
-        });
-        console.log('Simulation successful, proceeding with transaction');
-      } catch (simError: any) {
-        console.error('Simulation failed:', simError);
-        
-        // Parse revert reason
-        if (simError.cause?.reason) {
-          throw new Error(simError.cause.reason);
-        } else if (simError.cause?.data?.errorName) {
-          throw new Error(simError.cause.data.errorName);
-        } else if (simError.shortMessage) {
-          throw new Error(simError.shortMessage);
-        }
-        throw simError;
-      }
+      // Skip simulation and go directly to transaction
+      // The contract will handle validation and revert with proper error messages if needed
+
+      console.log('Attempting to write contract with:', {
+        address: GAME_REGISTRY_ADDRESS,
+        functionName: 'submitScore',
+        args: [gameId, BigInt(score)],
+        account: accounts[0],
+      });
 
       const hash = await client.writeContract({
         address: GAME_REGISTRY_ADDRESS,
@@ -156,8 +162,15 @@ export function useGameRegistry() {
       } as any);
 
       console.log('Transaction hash:', hash);
-      await publicClient.waitForTransactionReceipt({ hash });
-      console.log('Transaction confirmed');
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log('Transaction receipt:', receipt);
+      console.log('Transaction status:', receipt.status);
+      
+      if (receipt.status === 'reverted') {
+        throw new Error('Transaction reverted');
+      }
+      
       return hash;
     } catch (err) {
       console.error('Submit score error:', err);
@@ -175,6 +188,7 @@ export function useGameRegistry() {
 
   const getLeaderboard = async (gameId: string): Promise<LeaderboardEntry[]> => {
     try {
+      console.log('getLeaderboard called with gameId:', gameId);
       const result = await publicClient.readContract({
         address: GAME_REGISTRY_ADDRESS,
         abi: GAME_REGISTRY_ABI,
@@ -182,23 +196,32 @@ export function useGameRegistry() {
         args: [gameId]
       });
 
+      console.log('getLeaderboard raw result:', result);
+
       // Handle empty leaderboard case
       if (!result || !Array.isArray(result) || result.length !== 2) {
+        console.log('Invalid result format, returning empty array');
         return [];
       }
 
       const [players, scores] = result as [string[], bigint[]];
+      console.log('Players:', players);
+      console.log('Scores:', scores);
 
       // If players array is empty, return empty leaderboard
       if (!players || players.length === 0) {
+        console.log('No players in leaderboard');
         return [];
       }
 
-      return players.map((address, index) => ({
+      const entries = players.map((address, index) => ({
         address,
         score: Number(scores[index]),
         rank: index + 1
       }));
+      
+      console.log('Returning leaderboard entries:', entries);
+      return entries;
     } catch (err) {
       // If the error is due to empty data, return empty array
       if (err instanceof Error && err.message.includes('DataView')) {
@@ -222,9 +245,13 @@ export function useGameRegistry() {
         score: Number(score),
         timestamp: Number(timestamp)
       };
-    } catch (err) {
-      // If player has no score yet, return 0
-      if (err instanceof Error && (err.message.includes('Game does not exist') || err.message.includes('DataView'))) {
+    } catch (err: any) {
+      // If game doesn't exist or player has no score yet, return 0
+      // Common errors: "Game does not exist", DataView errors, execution reverted
+      const errorMessage = err?.message || err?.cause?.reason || '';
+      if (errorMessage.includes('Game does not exist') || 
+          errorMessage.includes('DataView') ||
+          errorMessage.includes('execution reverted')) {
         return { score: 0, timestamp: 0 };
       }
       setError(err instanceof Error ? err.message : 'Failed to get player score');
@@ -249,7 +276,13 @@ export function useGameRegistry() {
         created: info[4],
         active: info[5]
       };
-    } catch (err) {
+    } catch (err: any) {
+      // If game doesn't exist, throw with a clear message
+      const errorMessage = err?.message || err?.cause?.reason || '';
+      if (errorMessage.includes('Game does not exist') || 
+          errorMessage.includes('execution reverted')) {
+        throw new Error('Game does not exist');
+      }
       setError(err instanceof Error ? err.message : 'Failed to get game info');
       throw err;
     }

@@ -7,7 +7,7 @@ import { useUpProvider } from './upProvider';
 
 export function GameContainer() {
   const { walletConnected, accounts, chainId } = useUpProvider();
-  const { submitScore, getPlayerScore, isLoading, error, getGameInfo, registerGame } = useGameRegistry();
+  const { submitScore, getPlayerScore, isLoading, error } = useGameRegistry();
   
   const [gameId, setGameId] = useState<string>('');
   const [gameSeed, setGameSeed] = useState<string>('');
@@ -15,6 +15,7 @@ export function GameContainer() {
   const [showSubmitScore, setShowSubmitScore] = useState(false);
   const [lastScore, setLastScore] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<string>('');
 
   // Generate daily game ID
   useEffect(() => {
@@ -71,71 +72,50 @@ export function GameContainer() {
   }, [walletConnected, accounts, chainId, gameId, getPlayerScore]);
 
   const handleGameOver = (score: number) => {
+    console.log('Game Over - Score:', score, 'Personal Best:', playerBestScore);
     setLastScore(score);
     
-    // Show submit button if score beats personal best and wallet is connected
-    if (walletConnected && score > playerBestScore) {
+    // Show submit button if score beats personal best
+    if (score > playerBestScore) {
+      console.log('New personal best! Showing submit popup');
       setShowSubmitScore(true);
     }
   };
 
   const handleSubmitScore = async () => {
     if (!walletConnected || !lastScore) return;
+    
+    // Check if we're on the correct network
+    if (chainId !== 4201) {
+      setSubmitStatus('Please switch to LUKSO Testnet (chainId: 4201)');
+      setTimeout(() => setSubmitStatus(''), 5000);
+      return;
+    }
 
+    setSubmitStatus('Processing...');
     try {
       console.log('handleSubmitScore called:', {
         walletConnected,
         lastScore,
         gameId,
-        accounts
+        accounts,
+        chainId,
+        contractAddress: '0x83E0c99bF5BE14f8b9c4917c687ad5BC4Db625f3'
       });
 
-      // Check if game exists first
-      try {
-        const gameInfo = await getGameInfo(gameId);
-        console.log('Game info:', gameInfo);
-        
-        // If game doesn't exist or is not active, we need to register it
-        if (!gameInfo.active && gameInfo.creator === '0x0000000000000000000000000000000000000000') {
-          console.log('Game not registered, registering now...');
-          const today = new Date().toISOString().split('T')[0];
-          await registerGame(
-            gameId,
-            `Daily Flappy ${today}`,
-            'flappy',
-            {
-              description: 'Daily Flappy Bird challenge',
-              rules: 'Pass as many pipes as possible',
-              scoringSystem: '1 point per pipe passed'
-            }
-          );
-          console.log('Game registered successfully');
-        }
-      } catch (checkErr) {
-        // If the game doesn't exist, register it
-        if ((checkErr as Error).message.includes('Game does not exist')) {
-          console.log('Game does not exist, registering...');
-          const today = new Date().toISOString().split('T')[0];
-          await registerGame(
-            gameId,
-            `Daily Flappy ${today}`,
-            'flappy',
-            {
-              description: 'Daily Flappy Bird challenge',
-              rules: 'Pass as many pipes as possible',
-              scoringSystem: '1 point per pipe passed'
-            }
-          );
-        }
-      }
+      // Since we know the game exists from our earlier check, skip the existence check
+      // and go straight to score submission
+      setSubmitStatus('Preparing to submit score...');
 
       // Fetch current score again to ensure we have the latest
+      setSubmitStatus('Verifying current score...');
       let currentBestScore = playerBestScore;
       try {
         const { score: latestScore } = await getPlayerScore(gameId, accounts[0]);
         currentBestScore = latestScore;
         console.log('Latest score from chain:', latestScore);
-      } catch (err) {
+        setPlayerBestScore(latestScore); // Update the displayed best score
+      } catch {
         console.log('Could not fetch latest score, using cached:', currentBestScore);
       }
 
@@ -144,32 +124,41 @@ export function GameContainer() {
         throw new Error(`Score not improved. Current best: ${currentBestScore}, New score: ${lastScore}`);
       }
 
+      setSubmitStatus('Submitting score...');
       await submitScore(gameId, lastScore);
       setPlayerBestScore(lastScore);
       setShowSubmitScore(false);
-      alert('Score submitted successfully!');
+      setSubmitStatus('success');
+      
+      // Clear status after 5 seconds
+      setTimeout(() => setSubmitStatus(''), 5000);
     } catch (err) {
       console.error('Failed to submit score:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       
       // Provide more specific error messages
       if (errorMessage.includes('Score not improved')) {
-        alert('Your score must be higher than your previous best score to submit.');
+        setSubmitStatus('Your score must be higher than your previous best score to submit.');
       } else if (errorMessage.includes('Game does not exist')) {
-        alert('Failed to register game. Please try again.');
+        setSubmitStatus('Failed to register game. Please try again.');
+      } else if (errorMessage.includes('User rejected')) {
+        setSubmitStatus('Transaction cancelled.');
       } else {
-        alert(`Failed to submit score: ${errorMessage}`);
+        setSubmitStatus(`Failed: ${errorMessage}`);
       }
+      
+      // Clear error status after 5 seconds
+      setTimeout(() => setSubmitStatus(''), 5000);
     }
   };
 
   if (!gameId || !gameSeed) {
     return (
-      <div className="flex items-center justify-center min-h-[500px]">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-500">Loading game...</p>
+          <p className="text-gray-500 text-sm">Loading game...</p>
           {loadError && (
-            <p className="text-red-500 text-sm mt-2">{loadError}</p>
+            <p className="text-red-500 text-xs mt-2">{loadError}</p>
           )}
         </div>
       </div>
@@ -177,75 +166,134 @@ export function GameContainer() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Daily Flappy Challenge</h2>
-        <p className="text-gray-600">
-          {new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </p>
-        {walletConnected && playerBestScore > 0 && (
-          <p className="text-sm text-gray-500 mt-1">
-            Your best score today: {playerBestScore}
-          </p>
-        )}
-      </div>
-
-      <FlappyBird 
-        gameId={gameId}
-        seed={gameSeed}
-        onGameOver={handleGameOver}
-      />
-
-      {showSubmitScore && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md">
-          <h3 className="font-semibold text-green-800 mb-2">New High Score!</h3>
-          <p className="text-sm text-gray-600 mb-3">
-            You scored {lastScore} points! Submit your score to the global leaderboard?
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSubmitScore}
-              disabled={isLoading}
-              className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              {isLoading ? 'Submitting...' : 'Submit Score'}
-            </button>
-            <button
-              onClick={() => setShowSubmitScore(false)}
-              className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
+    <div className="w-full h-full flex flex-col relative">
+      {/* Wallet Connection Overlay */}
+      {!walletConnected && (
+        <div className="absolute inset-0 bg-white/95 z-30 flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="mb-4">
+              <svg className="w-16 h-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Connect Your Wallet</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              To submit scores and compete on the leaderboard, please connect your Universal Profile through the mini-app.
+            </p>
+            <div className="text-xs text-gray-500">
+              You can still play without connecting!
+            </div>
           </div>
         </div>
       )}
 
-      {!walletConnected && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md text-center">
-          <p className="text-sm text-gray-600">
-            Connect your wallet to submit scores to the leaderboard!
-          </p>
-        </div>
-      )}
-
+      {/* Network Warning Overlay */}
       {walletConnected && chainId !== 4201 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md text-center">
-          <p className="text-sm text-gray-600">
-            Please switch to LUKSO Testnet (chainId: 4201) to play. Current chain: {chainId}
-          </p>
+        <div className="absolute inset-0 bg-white/95 z-30 flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="mb-4">
+              <svg className="w-16 h-16 mx-auto text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Switch to LUKSO Testnet</h2>
+            <p className="text-sm text-gray-600">
+              Please switch to LUKSO Testnet (Chain ID: 4201) to play and submit scores.
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              Current chain: {chainId}
+            </p>
+          </div>
         </div>
       )}
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
+      {/* Header */}
+      <div className="p-2 bg-white border-b">
+        <h2 className="text-base font-bold text-gray-800">Daily Flappy Challenge</h2>
+        <p className="text-xs text-gray-600">
+          {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          {walletConnected && playerBestScore > 0 && (
+            <span className="ml-2">
+              • Best: <span className="font-bold">{playerBestScore}</span>
+            </span>
+          )}
+        </p>
+      </div>
+
+      {/* Game Area */}
+      <div className="flex-1 relative bg-gray-50">
+        <FlappyBird 
+          seed={gameSeed} 
+          onGameOver={handleGameOver}
+        />
+        
+        {/* Score Submit Popup - Centered in viewport */}
+        {showSubmitScore && lastScore > 0 && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/20">
+            <div className="bg-green-500 border-2 border-green-600 rounded-lg p-6 shadow-2xl mx-4 max-w-sm">
+              <p className="text-lg font-bold text-white mb-4 text-center">
+                🎉 New Personal Best! 🎉
+              </p>
+              <p className="text-2xl font-bold text-white mb-4 text-center">
+                Score: {lastScore}
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleSubmitScore}
+                  disabled={isLoading || !walletConnected || chainId !== 4201}
+                  className="w-full bg-white text-green-700 px-4 py-3 text-sm font-bold rounded-lg hover:bg-green-50 disabled:opacity-50 transition-colors"
+                >
+                  {!walletConnected ? 'Connect Wallet to Submit' : chainId !== 4201 ? 'Switch to LUKSO Testnet' : isLoading ? 'Submitting...' : 'Submit to Blockchain'}
+                </button>
+                <button
+                  onClick={() => setShowSubmitScore(false)}
+                  className="w-full bg-green-700 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-green-800 transition-colors"
+                >
+                  Play Again
+                </button>
+              </div>
+              {submitStatus && (
+                <p className="text-xs text-white mt-2 text-center">{submitStatus}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Success/Error Messages - Inside game area */}
+        {submitStatus && !showSubmitScore && (
+          <div className={`absolute bottom-2 left-2 right-2 rounded-lg p-3 shadow-lg z-50 transition-all duration-300 ${
+          submitStatus === 'success' 
+            ? 'bg-green-50 border-2 border-green-400' 
+            : submitStatus.includes('Failed') || submitStatus.includes('error')
+            ? 'bg-red-50 border border-red-200'
+            : 'bg-blue-50 border border-blue-200'
+        }`}>
+          {submitStatus === 'success' ? (
+            <div className="text-center">
+              <div className="text-2xl mb-1">🎉</div>
+              <h3 className="text-sm font-bold text-green-800">Score Submitted!</h3>
+              <p className="text-xs text-green-700">
+                Score of <span className="font-bold">{lastScore}</span> recorded!
+              </p>
+              <p className="text-xs text-green-600 mt-1">Check the leaderboard →</p>
+            </div>
+          ) : (
+            <p className={`text-xs ${
+              submitStatus.includes('Failed') || submitStatus.includes('error') 
+                ? 'text-red-600' 
+                : 'text-blue-600'
+            }`}>{submitStatus}</p>
+          )}
+          </div>
+        )}
+
+        {/* Error Messages - Inside game area */}
+        {error && (
+          <div className="absolute bottom-2 left-2 right-2 bg-red-50 border border-red-200 rounded-lg p-2 z-50">
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
