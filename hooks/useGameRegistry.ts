@@ -116,6 +116,37 @@ export function useGameRegistry() {
     setError(null);
 
     try {
+      console.log('Submitting score:', {
+        gameId,
+        score,
+        account: accounts[0],
+        contractAddress: GAME_REGISTRY_ADDRESS,
+      });
+
+      // First, simulate the transaction to get better error messages
+      try {
+        const { request } = await publicClient.simulateContract({
+          address: GAME_REGISTRY_ADDRESS,
+          abi: GAME_REGISTRY_ABI,
+          functionName: 'submitScore',
+          args: [gameId, BigInt(score)],
+          account: accounts[0],
+        });
+        console.log('Simulation successful, proceeding with transaction');
+      } catch (simError: any) {
+        console.error('Simulation failed:', simError);
+        
+        // Parse revert reason
+        if (simError.cause?.reason) {
+          throw new Error(simError.cause.reason);
+        } else if (simError.cause?.data?.errorName) {
+          throw new Error(simError.cause.data.errorName);
+        } else if (simError.shortMessage) {
+          throw new Error(simError.shortMessage);
+        }
+        throw simError;
+      }
+
       const hash = await client.writeContract({
         address: GAME_REGISTRY_ADDRESS,
         abi: GAME_REGISTRY_ABI,
@@ -124,9 +155,17 @@ export function useGameRegistry() {
         account: accounts[0],
       } as any);
 
+      console.log('Transaction hash:', hash);
       await publicClient.waitForTransactionReceipt({ hash });
+      console.log('Transaction confirmed');
       return hash;
     } catch (err) {
+      console.error('Submit score error:', err);
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        cause: (err as any)?.cause,
+        details: (err as any)?.details,
+      });
       setError(err instanceof Error ? err.message : 'Failed to submit score');
       throw err;
     } finally {

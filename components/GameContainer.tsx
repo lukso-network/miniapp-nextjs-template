@@ -7,7 +7,7 @@ import { useUpProvider } from './upProvider';
 
 export function GameContainer() {
   const { walletConnected, accounts, chainId } = useUpProvider();
-  const { submitScore, getPlayerScore, isLoading, error } = useGameRegistry();
+  const { submitScore, getPlayerScore, isLoading, error, getGameInfo, registerGame } = useGameRegistry();
   
   const [gameId, setGameId] = useState<string>('');
   const [gameSeed, setGameSeed] = useState<string>('');
@@ -56,8 +56,10 @@ export function GameContainer() {
 
       try {
         const { score } = await getPlayerScore(gameId, accounts[0]);
+        console.log('Fetched player score:', score, 'for gameId:', gameId);
         setPlayerBestScore(score);
       } catch (err) {
+        console.log('Error fetching player score:', err);
         // Ignore errors, just set to 0
         setPlayerBestScore(0);
       }
@@ -81,13 +83,83 @@ export function GameContainer() {
     if (!walletConnected || !lastScore) return;
 
     try {
+      console.log('handleSubmitScore called:', {
+        walletConnected,
+        lastScore,
+        gameId,
+        accounts
+      });
+
+      // Check if game exists first
+      try {
+        const gameInfo = await getGameInfo(gameId);
+        console.log('Game info:', gameInfo);
+        
+        // If game doesn't exist or is not active, we need to register it
+        if (!gameInfo.active && gameInfo.creator === '0x0000000000000000000000000000000000000000') {
+          console.log('Game not registered, registering now...');
+          const today = new Date().toISOString().split('T')[0];
+          await registerGame(
+            gameId,
+            `Daily Flappy ${today}`,
+            'flappy',
+            {
+              description: 'Daily Flappy Bird challenge',
+              rules: 'Pass as many pipes as possible',
+              scoringSystem: '1 point per pipe passed'
+            }
+          );
+          console.log('Game registered successfully');
+        }
+      } catch (checkErr) {
+        // If the game doesn't exist, register it
+        if ((checkErr as Error).message.includes('Game does not exist')) {
+          console.log('Game does not exist, registering...');
+          const today = new Date().toISOString().split('T')[0];
+          await registerGame(
+            gameId,
+            `Daily Flappy ${today}`,
+            'flappy',
+            {
+              description: 'Daily Flappy Bird challenge',
+              rules: 'Pass as many pipes as possible',
+              scoringSystem: '1 point per pipe passed'
+            }
+          );
+        }
+      }
+
+      // Fetch current score again to ensure we have the latest
+      let currentBestScore = playerBestScore;
+      try {
+        const { score: latestScore } = await getPlayerScore(gameId, accounts[0]);
+        currentBestScore = latestScore;
+        console.log('Latest score from chain:', latestScore);
+      } catch (err) {
+        console.log('Could not fetch latest score, using cached:', currentBestScore);
+      }
+
+      // Check if the new score is actually better
+      if (lastScore <= currentBestScore) {
+        throw new Error(`Score not improved. Current best: ${currentBestScore}, New score: ${lastScore}`);
+      }
+
       await submitScore(gameId, lastScore);
       setPlayerBestScore(lastScore);
       setShowSubmitScore(false);
       alert('Score submitted successfully!');
     } catch (err) {
       console.error('Failed to submit score:', err);
-      alert('Failed to submit score. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
+      // Provide more specific error messages
+      if (errorMessage.includes('Score not improved')) {
+        alert('Your score must be higher than your previous best score to submit.');
+      } else if (errorMessage.includes('Game does not exist')) {
+        alert('Failed to register game. Please try again.');
+      } else {
+        alert(`Failed to submit score: ${errorMessage}`);
+      }
     }
   };
 

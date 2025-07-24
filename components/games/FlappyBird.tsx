@@ -242,7 +242,6 @@ export function FlappyBird({ gameId, seed, onGameOver }: FlappyBirdProps) {
         className="border border-gray-300 rounded-lg cursor-pointer"
         style={{ imageRendering: 'pixelated' }}
       />
-      <p className="text-sm text-gray-600">Click or press Space to jump</p>
     </div>
   );
 }
